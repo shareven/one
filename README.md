@@ -37,6 +37,6 @@ ios用户，需要你clone源码后，自行调试和打包了。
 
 # APP Show
 
-<img src="https://cdn.jsdelivr.net/gh/shareven/one/show1.jpg" width="200">
+<img src="https://raw.githubusercontent.com/shareven/one/main/show1.jpg" width="200">
 
-<img src="https://cdn.jsdelivr.net/gh/shareven/one/show2.jpg" width="200">
+<img src="https://raw.githubusercontent.com/shareven/one/main/show2.jpg" width="200">
