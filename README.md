@@ -33,3 +33,10 @@ ios用户，需要你clone源码后，自行调试和打包了。
 # 备份与还原数据库
 
 数据库数据包含`账单`,`便签`,`宝贝`,`健康`等数据
+
+
+# APP Show
+
+<img src="https://cdn.jsdelivr.net/gh/shareven/one/assets/images/Screenshot_2024-10-21-13-56-11-75_6332d828b82d01b74cc0422a043d8e1a.jpg" width="200">
+
+<img src="https://cdn.jsdelivr.net/gh/shareven/one/assets/images/Screenshot_2024-10-21-13-56-44-70_6332d828b82d01b74cc0422a043d8e1a.jpg" width="200">
