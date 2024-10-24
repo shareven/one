@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+
 import 'package:one/model/person_model.dart';
 import 'package:one/pages/health/add_person.dart';
 import 'package:one/utils/data_service.dart';
 import 'package:one/utils/result_data.dart';
 import 'package:one/utils/utils.dart';
+import 'package:one/widgets/leave_behind_list_item.dart';
 import 'package:one/widgets/nodatafound.dart';
 
 class Person extends StatefulWidget {
@@ -16,7 +17,6 @@ class Person extends StatefulWidget {
 
 class _PersonState extends State<Person> {
   List<PersonModel>? person;
-  final DismissDirection _dismissDirection = DismissDirection.endToStart;
 
   /// 获取数据
   Future<void> _getPersons() async {
@@ -42,31 +42,11 @@ class _PersonState extends State<Person> {
     setState(() {
       person!.remove(item);
     });
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Text(
-          '确定删除以下人员?\n\n${item.name}',
-          maxLines: 5,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text("取消", style: TextStyle(color: Colors.grey)),
-            onPressed: () {
-              handleUndo(item, insertionIndex);
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text("删除", style: TextStyle(color: Colors.pink)),
-            onPressed: () {
-              _delete(item, insertionIndex);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+    showDeleteDialog(
+      context,
+      '确定删除以下人员?\n\n${item.name}',
+      cancelFn: () => handleUndo(item, insertionIndex),
+      deleteFn: () => _delete(item, insertionIndex),
     );
   }
 
@@ -108,11 +88,12 @@ class _PersonState extends State<Person> {
     } else {
       mainWidget = ListView(
         children: person!
-            .map((item) => _LeaveBehindListItem(
-                dismissDirection: _dismissDirection,
-                item: item,
-                onTap: (v) {},
-                onDelete: _handleDelete))
+            .map((item) => LeaveBehindListItem(
+                  dismissibleKey: ObjectKey(item),
+                  titleText: item.name,
+                  subtitle: Text(item.updatedAt),
+                  onDelete: () => _handleDelete(item),
+                ))
             .toList(),
       );
     }
@@ -129,71 +110,5 @@ class _PersonState extends State<Person> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-}
-
-class _LeaveBehindListItem extends StatelessWidget {
-  const _LeaveBehindListItem({
-    required this.item,
-    required this.onDelete,
-    required this.onTap,
-    required this.dismissDirection,
-  });
-
-  final PersonModel item;
-  final DismissDirection dismissDirection;
-  final void Function(PersonModel) onDelete;
-  final void Function(PersonModel) onTap;
-
-  void _handleDelete() {
-    onDelete(item);
-  }
-
-  void _handleTap() {
-    onTap(item);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Semantics(
-        customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-          // const CustomSemanticsAction(label: '完成'): _handleDelete,
-          const CustomSemanticsAction(label: '删除'): _handleDelete,
-        },
-        child: Dismissible(
-          key: ObjectKey(item),
-          direction: dismissDirection,
-          onDismissed: (DismissDirection direction) {
-            _handleDelete();
-          },
-          background: Container(
-              color: theme.primaryColor,
-              child: const ListTile(
-                  trailing: Icon(Icons.add, color: Colors.white, size: 36.0))),
-          secondaryBackground: Container(
-              color: Colors.pink,
-              child: const ListTile(
-                  contentPadding: EdgeInsets.all(14.0),
-                  trailing:
-                      Icon(Icons.delete, color: Colors.white, size: 36.0))),
-          child: Card(
-            child: Container(
-              decoration: BoxDecoration(
-                  color: theme.canvasColor,
-                  border:
-                      Border(bottom: BorderSide(color: theme.dividerColor))),
-              child: ListTile(
-                onTap: _handleTap,
-                title: Text(
-                  item.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(item.updatedAt),
-              ),
-            ),
-          ),
-        ));
   }
 }

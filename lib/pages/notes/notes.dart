@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+
 import 'package:one/model/note_model.dart';
 import 'package:one/pages/notes/add_notes.dart';
 import 'package:one/pages/notes/edit_notes.dart';
 import 'package:one/utils/data_service.dart';
+import 'package:one/widgets/leave_behind_list_item.dart';
 import "package:pull_to_refresh/pull_to_refresh.dart";
 import 'package:one/utils/result_data.dart';
 import 'package:one/utils/utils.dart';
@@ -19,7 +20,6 @@ class Notes extends StatefulWidget {
 }
 
 class _NotesState extends State<Notes> {
-  final DismissDirection _dismissDirection = DismissDirection.endToStart;
   List<NoteModel>? _notesList;
   RefreshController? _refreshController;
   String _searchWord = "";
@@ -70,31 +70,11 @@ class _NotesState extends State<Notes> {
     setState(() {
       _notesList!.remove(item);
     });
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Text(
-          '确定删除以下便签?\n\n${item.updatedAt}\n${item.content}',
-          maxLines: 5,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text("取消", style: TextStyle(color: Colors.grey)),
-            onPressed: () {
-              handleUndo(item, insertionIndex);
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text("删除", style: TextStyle(color: Colors.pink)),
-            onPressed: () {
-              _deleteNotes(item, insertionIndex);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+    showDeleteDialog(
+      context,
+      '确定删除以下便签?\n\n${item.updatedAt}\n${item.content}',
+      cancelFn: () => handleUndo(item, insertionIndex),
+      deleteFn: () => _deleteNotes(item, insertionIndex),
     );
   }
 
@@ -146,13 +126,15 @@ class _NotesState extends State<Notes> {
         onRefresh: _handleRefresh,
         child: ListView(
           children: _notesList!.map<Widget>((NoteModel item) {
-            return _LeaveBehindListItem(
-                dismissDirection: _dismissDirection,
-                item: item,
-                onTap: (val) {
-                  _goToEditPage(val);
-                },
-                onDelete: _handleDelete);
+            return LeaveBehindListItem(
+              dismissibleKey: ObjectKey(item),
+              titleText: item.content,
+              subtitle: Text(item.updatedAt),
+              onTap: () {
+                _goToEditPage(item);
+              },
+              onDelete: () => _handleDelete(item),
+            );
           }).toList(),
         ),
       );
@@ -204,68 +186,5 @@ class _NotesState extends State<Notes> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-}
-
-class _LeaveBehindListItem extends StatelessWidget {
-  const _LeaveBehindListItem({
-    required this.item,
-    required this.onDelete,
-    required this.onTap,
-    required this.dismissDirection,
-  });
-
-  final NoteModel item;
-  final DismissDirection dismissDirection;
-  final void Function(NoteModel) onDelete;
-  final void Function(NoteModel) onTap;
-
-  void _handleDelete() {
-    onDelete(item);
-  }
-
-  void _handleTap() {
-    onTap(item);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Semantics(
-        customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-          // const CustomSemanticsAction(label: '完成'): _handleDelete,
-          const CustomSemanticsAction(label: '删除'): _handleDelete,
-        },
-        child: Dismissible(
-          key: ObjectKey(item),
-          direction: dismissDirection,
-          onDismissed: (DismissDirection direction) {
-            _handleDelete();
-          },
-          background: Container(
-              color: theme.primaryColor,
-              child: const ListTile(
-                  trailing: Icon(Icons.add, color: Colors.white, size: 36.0))),
-          secondaryBackground: Container(
-              color: Colors.pink,
-              child: const ListTile(
-                  contentPadding: EdgeInsets.all(14.0),
-                  trailing:
-                      Icon(Icons.delete, color: Colors.white, size: 36.0))),
-          child: Container(
-            decoration: BoxDecoration(
-                color: theme.canvasColor,
-                border: Border(bottom: BorderSide(color: theme.dividerColor))),
-            child: ListTile(
-              onTap: _handleTap,
-              title: Text(
-                item.content,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(item.updatedAt),
-            ),
-          ),
-        ));
   }
 }

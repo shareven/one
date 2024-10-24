@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+
 import 'package:one/model/Health_model.dart';
 import 'package:one/utils/data_service.dart';
+import 'package:one/widgets/leave_behind_list_item.dart';
 import "package:pull_to_refresh/pull_to_refresh.dart";
 import 'package:one/utils/result_data.dart';
 import 'package:one/utils/utils.dart';
@@ -16,7 +17,6 @@ class HealthCards extends StatefulWidget {
 }
 
 class _HealthCardsState extends State<HealthCards> {
-  final DismissDirection _dismissDirection = DismissDirection.endToStart;
   List<HealthModel>? _healthList;
   RefreshController? _refreshController;
   int? _countHealth;
@@ -101,28 +101,12 @@ class _HealthCardsState extends State<HealthCards> {
     setState(() {
       _healthList!.remove(item);
     });
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-              content: Text(
-                  "确定删除以下信息?\n\n\"${item.time}, ${item.person}, 体重:${item.weight}, 身高:${item.height}\""),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text("取消", style: TextStyle(color: Colors.grey)),
-                  onPressed: () {
-                    handleUndo(item, insertionIndex);
-                    Navigator.pop(context);
-                  },
-                ),
-                TextButton(
-                  child: const Text("删除", style: TextStyle(color: Colors.pink)),
-                  onPressed: () {
-                    _deleteHealth(item, insertionIndex);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ));
+    showDeleteDialog(
+      context,
+      "确定删除以下信息?\n\n\"${item.time}, ${item.person}, 体重:${item.weight}, 身高:${item.height}\"",
+      cancelFn: () => handleUndo(item, insertionIndex),
+      deleteFn: () => _deleteHealth(item, insertionIndex),
+    );
   }
 
   void _deleteHealth(HealthModel item, int insertionIndex) async {
@@ -151,10 +135,16 @@ class _HealthCardsState extends State<HealthCards> {
         onRefresh: _handleRefresh,
         child: ListView(
           children: _healthList!.map<Widget>((HealthModel item) {
-            return _LeaveBehindListItem(
-                dismissDirection: _dismissDirection,
-                item: item,
-                onDelete: _handleDelete);
+            return LeaveBehindListItem(
+              dismissibleKey: ObjectKey(item),
+              titleText: item.person,
+              subtitle: Text("体重：${item.weight}\n身高：${item.height}"),
+              trailing: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("BMI：${item.bmi}\n${item.time}")),
+              isThreeLine: true,
+              onDelete: () => _handleDelete(item),
+            );
           }).toList(),
         ),
       );
@@ -165,60 +155,6 @@ class _HealthCardsState extends State<HealthCards> {
         title: const Text("健康信息列表"),
       ),
       body: body,
-    );
-  }
-}
-
-class _LeaveBehindListItem extends StatelessWidget {
-  const _LeaveBehindListItem({
-    required this.item,
-    required this.onDelete,
-    required this.dismissDirection,
-  });
-
-  final HealthModel item;
-  final DismissDirection dismissDirection;
-  final void Function(HealthModel) onDelete;
-
-  void _handleDelete() {
-    onDelete(item);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Semantics(
-      customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-        const CustomSemanticsAction(label: '删除'): _handleDelete,
-      },
-      child: Dismissible(
-        key: ObjectKey(item),
-        direction: dismissDirection,
-        onDismissed: (DismissDirection direction) {
-          _handleDelete();
-        },
-        background: Container(
-            color: theme.primaryColor,
-            child: const ListTile(
-                trailing: Icon(Icons.add, color: Colors.white, size: 36.0))),
-        secondaryBackground: Container(
-            color: Colors.pink,
-            child: const ListTile(
-                contentPadding: EdgeInsets.all(14.0),
-                trailing: Icon(Icons.delete, color: Colors.white, size: 36.0))),
-        child: Container(
-          decoration: BoxDecoration(
-              color: theme.canvasColor,
-              border: Border(bottom: BorderSide(color: theme.dividerColor))),
-          child: ListTile(
-              title: Text(item.person),
-              subtitle: Text("体重：${item.weight}\n身高：${item.height}"),
-              trailing: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("BMI：${item.bmi}\n${item.time}")),
-              isThreeLine: true),
-        ),
-      ),
     );
   }
 }

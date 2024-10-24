@@ -38,6 +38,34 @@ void showSuccessMsg(String msg) {
   );
 }
 
+showDeleteDialog(BuildContext context, String text,
+    {required Function deleteFn, Function? cancelFn}) {
+  showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+            content: Text(
+              text,
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text("取消", style: TextStyle(color: Colors.grey)),
+                onPressed: () {
+                  if (cancelFn != null) cancelFn();
+                  Navigator.pop(context);
+                },
+              ),
+              TextButton(
+                child: const Text("删除", style: TextStyle(color: Colors.pink)),
+                onPressed: () {
+                  deleteFn();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ));
+}
 
 String stringToHex(String str) {
   // 将字符串编码为UTF-8字节数组

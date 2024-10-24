@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+
 import 'package:one/model/account_model.dart';
 import 'package:one/model/cost_type_model.dart';
 import 'package:one/utils/data_service.dart';
+import 'package:one/widgets/leave_behind_list_item.dart';
 import "package:pull_to_refresh/pull_to_refresh.dart";
 import 'package:one/utils/result_data.dart';
 import 'package:one/utils/utils.dart';
@@ -18,7 +19,6 @@ class AccountsCards extends StatefulWidget {
 }
 
 class _AccountsCardsState extends State<AccountsCards> {
-  final DismissDirection _dismissDirection = DismissDirection.endToStart;
   List<AccountModel>? _accountsList;
   RefreshController? _refreshController;
   int? _countAccounts;
@@ -174,28 +174,12 @@ class _AccountsCardsState extends State<AccountsCards> {
     setState(() {
       _accountsList!.remove(item);
     });
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-              content: Text(
-                  "确定删除以下账单?\n\n\"${item.time} ${item.costType} ￥${item.money} \""),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text("取消", style: TextStyle(color: Colors.grey)),
-                  onPressed: () {
-                    handleUndo(item, insertionIndex);
-                    Navigator.pop(context);
-                  },
-                ),
-                TextButton(
-                  child: const Text("删除", style: TextStyle(color: Colors.pink)),
-                  onPressed: () {
-                    _deleteAccount(item, insertionIndex);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ));
+    showDeleteDialog(
+      context,
+      "确定删除以下账单?\n\n\"${item.time} ${item.costType} ￥${item.money} \"",
+      cancelFn: () => handleUndo(item, insertionIndex),
+      deleteFn: () => _deleteAccount(item, insertionIndex),
+    );
   }
 
   void _deleteAccount(AccountModel item, int insertionIndex) async {
@@ -230,10 +214,24 @@ class _AccountsCardsState extends State<AccountsCards> {
         onRefresh: _handleRefresh,
         child: ListView(
           children: _accountsList!.map<Widget>((AccountModel item) {
-            return _LeaveBehindListItem(
-                dismissDirection: _dismissDirection,
-                item: item,
-                onDelete: _handleDelete);
+            return LeaveBehindListItem(
+              dismissibleKey: ObjectKey(item),
+              titleText: "￥${item.money}",
+              subtitle: Text("${item.time}\n${item.remark}"),
+              onDelete: () => _handleDelete(item),
+              trailing: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    item.costType,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: item.isIncome
+                          ? Colors.green
+                          : Theme.of(context).hintColor,
+                    ),
+                  )),
+              isThreeLine: true,
+            );
           }).toList(),
         ),
       );
@@ -287,69 +285,6 @@ class _AccountsCardsState extends State<AccountsCards> {
         ],
       ),
       body: body,
-    );
-  }
-}
-
-class _LeaveBehindListItem extends StatelessWidget {
-  const _LeaveBehindListItem({
-    required this.item,
-    required this.onDelete,
-    required this.dismissDirection,
-  });
-
-  final AccountModel item;
-  final DismissDirection dismissDirection;
-  final void Function(AccountModel) onDelete;
-
-  void _handleDelete() {
-    onDelete(item);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Semantics(
-      customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-        // const CustomSemanticsAction(label: '完成'): _handleDelete,
-        const CustomSemanticsAction(label: '删除'): _handleDelete,
-      },
-      child: Dismissible(
-        key: ObjectKey(item),
-        direction: dismissDirection,
-        onDismissed: (DismissDirection direction) {
-          _handleDelete();
-        },
-        background: Container(
-            color: theme.primaryColor,
-            child: const ListTile(
-                trailing: Icon(Icons.add, color: Colors.white, size: 36.0))),
-        secondaryBackground: Container(
-            color: Colors.pink,
-            child: const ListTile(
-                contentPadding: EdgeInsets.all(14.0),
-                trailing: Icon(Icons.delete, color: Colors.white, size: 36.0))),
-        child: Container(
-          decoration: BoxDecoration(
-              color: theme.canvasColor,
-              border: Border(
-                  bottom:
-                      BorderSide(color: theme.dividerColor.withOpacity(0.2)))),
-          child: ListTile(
-              title: Text("￥${item.money}"),
-              subtitle: Text("${item.time}\n${item.remark}"),
-              trailing: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    item.costType,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: item.isIncome ? Colors.green : theme.hintColor,
-                    ),
-                  )),
-              isThreeLine: true),
-        ),
-      ),
     );
   }
 }

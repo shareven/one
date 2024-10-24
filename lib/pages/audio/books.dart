@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:one/utils/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
@@ -55,32 +56,13 @@ class _BooksState extends State<Books> {
     setState(() {
       _books!.remove(item);
     });
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Text(
-          '确定删除以下书?\n\n${item.name}',
-          maxLines: 5,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text("取消", style: TextStyle(color: Colors.grey)),
-            onPressed: () {
-              handleUndo(item, insertionIndex);
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text("删除", style: TextStyle(color: Colors.pink)),
-            onPressed: () {
-              _deleteBook(item);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+    showDeleteDialog(
+      context,
+      '确定删除以下书?\n\n${item.name}',
+      cancelFn: () => handleUndo(item, insertionIndex),
+      deleteFn: () => _deleteBook(item),
     );
+    
   }
 
   Future _deleteBook(BookModel book) async {

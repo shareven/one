@@ -7,6 +7,7 @@ import 'package:one/pages/baby/baby_option_cards.dart';
 import 'package:one/utils/data_service.dart';
 import 'package:one/utils/Loading.dart';
 import 'package:one/utils/result_data.dart';
+import 'package:one/utils/utils.dart';
 import 'package:one/widgets/main_drawer.dart';
 import 'package:one/widgets/nodatafound.dart';
 
@@ -126,31 +127,13 @@ class _BabyState extends State<Baby> with SingleTickerProviderStateMixin {
   }
 
   _showConfirm(BabyModel item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Text(
-          '确定删除以下这条记录吗?\n\n${item.startTime}\n${item.endTime ?? ""}',
-          maxLines: 5,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text("取消", style: TextStyle(color: Colors.grey)),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text("删除", style: TextStyle(color: Colors.pink)),
-            onPressed: () {
-              _delete(item.id);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+    showDeleteDialog(
+      context,
+      '确定删除以下这条记录吗?\n\n${item.startTime}\n${item.endTime ?? ""}',
+      
+      deleteFn: () => _delete(item.id),
     );
+    
   }
 
   _delete(id) async {
