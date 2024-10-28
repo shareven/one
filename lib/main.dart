@@ -21,7 +21,6 @@ import 'package:one/provide/audio_provide.dart';
 import 'package:one/provide/authorize_provide.dart';
 
 Future<void> main() async {
-  
   WidgetsFlutterBinding.ensureInitialized();
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
@@ -99,6 +98,7 @@ class _MyAppState extends State<MyApp> {
             primary: Color(widget.themeColor),
             secondary: Colors.black87,
           ),
+          secondaryHeaderColor: Color(widget.themeColor).withAlpha(35),
           useMaterial3: true,
         ),
         initialRoute: widget.defaultPage,

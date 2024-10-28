@@ -217,7 +217,7 @@ class _AudioState extends State<Audio> {
                           height: 50,
                           child: Material(
                             color: i == state!.currentIndex
-                                ? Theme.of(context).primaryColorLight
+                                ? Theme.of(context).secondaryHeaderColor
                                 : Theme.of(context).highlightColor,
                             child: ListTile(
                               title: Text(sequence[i].tag.title as String),
