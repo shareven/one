@@ -20,6 +20,8 @@ class AudioProvide with ChangeNotifier {
   DateTime? closeDateTime;
   // 创建一个Timer
   Timer? _timer;
+  //播放流订阅
+  StreamSubscription<Duration>? subscriptionPlayStream;
 
   // 取消定时关闭任务
   void cancelTimer() {
@@ -84,7 +86,12 @@ class AudioProvide with ChangeNotifier {
     // Listen to errors during playback.
     player.playbackEventStream
         .listen((event) {}, onError: (Object e, StackTrace stackTrace) {});
-    player.positionStream.listen((position) {
+
+    // 如果subscriptionPlayStream不为null，则取消它
+    if (subscriptionPlayStream != null) {
+      await subscriptionPlayStream!.cancel();
+    }
+    subscriptionPlayStream = player.positionStream.listen((position) {
       //  记录播放位置 3s保存一次 | Record playback position and save once every 3 seconds
       if (player.playing &&
           player.currentIndex != null &&

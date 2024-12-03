@@ -57,7 +57,7 @@ class _SettingBookState extends State<SettingBook> {
     await LocalStorage.setLocalBookDirectory(_selectedDirectory);
 
     if (isSuccess && mounted) {
-      context.read<AudioProvide>().setPlayBookItems();
+      context.read<AudioProvide>().audioInit();
 
       Navigator.pop(context);
     }
