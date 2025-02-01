@@ -30,19 +30,26 @@ class _BooksState extends State<Books> {
   Future _getBookData() async {
     List<BookModel> books = await LocalStorage.getBooksVal();
     BookModel? book = await LocalStorage.getCurrentBookVal();
-    books.insertAll(0, Global.books);
+    List<BookModel> notInList = [];
+    for (var i = 0; i < Global.books.length; i++) {
+      var e = Global.books[i];
+      int index = books.indexWhere((x) => x.name == e.name);
+      if (index == -1) {
+        notInList.add(e);
+      }
+    }
+    books.insertAll(0,notInList);
     setState(() {
       _books = books;
       _currentBook = book;
     });
   }
 
-  _setCurrentBook(book) async {
+  _setCurrentBook(BookModel book) async {
     setState(() {
       _currentBook = book;
     });
     await LocalStorage.setCurrentBookVal(book);
-    await LocalStorage.setPlayRecordVal([0, 0]);
   }
 
   void handleUndo(BookModel item, int insertionIndex) {
@@ -62,13 +69,11 @@ class _BooksState extends State<Books> {
       cancelFn: () => handleUndo(item, insertionIndex),
       deleteFn: () => _deleteBook(item),
     );
-    
   }
 
   Future _deleteBook(BookModel book) async {
     if (_currentBook != null && _currentBook!.name == book.name) {
       await LocalStorage.setCurrentBookVal(null);
-      await LocalStorage.setPlayRecordVal([0, 0]);
       if (mounted) context.read<AudioProvide>().setPlayBookItems();
       setState(() {
         _currentBook = null;
@@ -78,7 +83,16 @@ class _BooksState extends State<Books> {
     books.removeWhere((e) => e.name == book.name);
     List list = books.map((e) => e.toJson()).toList();
     LocalStorage.setBooksVal(list);
-    books.insertAll(0, Global.books);
+    
+    List<BookModel> notInList = [];
+    for (var i = 0; i < Global.books.length; i++) {
+      var e = Global.books[i];
+      int index = books.indexWhere((x) => x.name == e.name);
+      if (index == -1) {
+        notInList.add(e);
+      }
+    }
+    books.insertAll(0,notInList);
     setState(() {
       _books = books;
     });
@@ -184,10 +198,16 @@ class _LeaveBehindListItem extends StatelessWidget {
               subtitle: Text("${item.start}-${item.end}集"),
               selected: item.name == currentBook?.name,
               selectedColor: Theme.of(context).colorScheme.primary,
-              leading: Image.file(
-                File(item.artUrl),
-                height: 50,
+              leading: Container(
                 width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: FileImage(File(item.artUrl)),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
               trailing: item.name == currentBook?.name
                   ? Icon(

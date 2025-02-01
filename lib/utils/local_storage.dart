@@ -7,7 +7,6 @@ import 'package:one/model/book_model.dart';
 class LocalStorage {
   static const String heightKey = "heightKey";
   static const String mmKey = "mmKey";
-  static const String playRecordKey = "playRecordKey";
   static const String playSkipSecondsKey = "playSkipSecondsKey";
   static const String booksKey = "booksKey";
   static const String currentBookKey = "currentBookKey";
@@ -102,18 +101,6 @@ class LocalStorage {
       }
     }
     return null;
-  }
-
-  /// [ _player.currentIndex, position.inSeconds]
-  static Future<bool?> setPlayRecordVal(List list) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setString(playRecordKey, jsonEncode(list));
-  }
-
-  static Future<List?> getPlayRecordVal() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? val = prefs.getString(playRecordKey);
-    return val != null ? jsonDecode(val) : null;
   }
 
   static Future<bool> setPlaySkipSeconds(List<String> list) async {

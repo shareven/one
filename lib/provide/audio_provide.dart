@@ -96,8 +96,7 @@ class AudioProvide with ChangeNotifier {
           player.currentIndex != null &&
           position.inSeconds != 0 &&
           position.inSeconds % Global.autoSaveSeconds == 0) {
-        LocalStorage.setPlayRecordVal(
-            [player.currentIndex, position.inSeconds]);
+        _setPlayRecord(player.currentIndex!, position.inSeconds);
       }
 
       if (position.inMilliseconds < bookSkipSeconds[0].inMilliseconds &&
@@ -153,9 +152,28 @@ class AudioProvide with ChangeNotifier {
   }
 
   _getRecord() async {
-    var res = await LocalStorage.getPlayRecordVal();
+    BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
-      await player.seek(Duration(seconds: res[1]), index: res[0]);
+      await player.seek(Duration(seconds: res.playRecordInSeconds),
+          index: res.playRecordIndex);
     }
+  }
+
+  void _setPlayRecord(int currentIndex, int inSeconds) async {
+    BookModel? book = await LocalStorage.getCurrentBookVal();
+    List<BookModel> books = await LocalStorage.getBooksVal();
+    if (book == null) return;
+
+    book.playRecordIndex = currentIndex;
+    book.playRecordInSeconds = inSeconds;
+
+    int index = books.indexWhere((e) => e.name == book.name);
+    if (index != -1) {
+      books.removeAt(index);
+    }
+    books.insert(0, book);
+    List list = books.map((e) => e.toJson()).toList();
+    LocalStorage.setBooksVal(list);
+    LocalStorage.setCurrentBookVal(book);
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:one/model/book_model.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:one/config/global.dart';
@@ -46,11 +47,11 @@ class _AudioState extends State<Audio> {
   }
 
   Future getRecord() async {
-    var res = await LocalStorage.getPlayRecordVal();
+    BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
       try {
         await Future.delayed(const Duration(milliseconds: 600));
-        scrollToItem(res[0]);
+        scrollToItem(res.playRecordIndex);
       } catch (e) {
         print(e);
       }
@@ -143,8 +144,11 @@ class _AudioState extends State<Audio> {
               },
               icon: const Icon(Icons.settings_applications_sharp)),
           IconButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (BuildContext context) => const Books())),
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (BuildContext context) => const Books()));
+                getRecord();
+              },
               icon: const Icon(Icons.book))
         ],
       ),
@@ -167,12 +171,20 @@ class _AudioState extends State<Audio> {
                     children: [
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(18.0),
                           child: Center(
-                            child: Image.file(
-                              File(metadata.artUri!.path),
-                              width: 400,
-                              height: 400,
+                            child: Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(12),
+                                image: DecorationImage(
+                                  image: FileImage(
+                                      File(metadata.artUri!.path)),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -203,7 +215,7 @@ class _AudioState extends State<Audio> {
             ),
             const SizedBox(height: 8.0),
             SizedBox(
-              height: 340.0,
+              height: 300.0,
               child: StreamBuilder<SequenceState?>(
                 stream: player.sequenceStateStream,
                 builder: (context, snapshot) {

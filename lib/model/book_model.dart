@@ -4,6 +4,10 @@ class BookModel {
   int start;
   int end;
 
+  // play record
+  int playRecordIndex = 1 ;
+  int playRecordInSeconds = 0;
+
   BookModel(
     this.name,
     this.artUrl,
@@ -14,6 +18,8 @@ class BookModel {
   BookModel.fromJson(json)
       : name = json["name"],
         artUrl = json["artUrl"],
+        playRecordIndex = json["playRecordIndex"]??1,
+        playRecordInSeconds = json["playRecordInSeconds"]??0,
         start = json["start"],
         end = json["end"];
 
@@ -23,6 +29,8 @@ class BookModel {
       "artUrl": artUrl,
       "start": start,
       "end": end,
+      "playRecordIndex": playRecordIndex,
+      "playRecordInSeconds": playRecordInSeconds,
     };
   }
 }
