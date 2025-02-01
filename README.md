@@ -4,8 +4,6 @@
 
 # 下载 | Download
 
-最新版本：V1.0.4
-
 [Android apk release](https://github.com/shareven/one/releases/)
 
 ios用户，需要你clone源码后，自行调试和打包了。
