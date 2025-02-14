@@ -6,12 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:one/model/book_model.dart';
+import 'package:one/provider/audio_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:one/config/global.dart';
 import 'package:one/pages/audio/Books.dart';
 import 'package:one/pages/audio/setting_book.dart';
-import 'package:one/provide/audio_provide.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/widgets/countdown_timer.dart';
 import 'package:one/widgets/main_drawer.dart';
@@ -59,8 +59,8 @@ class _AudioState extends State<Audio> {
   }
 
   Future<void> setCloseTime(BuildContext context) {
-    int closeTime = context.read<AudioProvide>().closeTime;
-    DateTime? closeDateTime = context.read<AudioProvide>().closeDateTime;
+    int closeTime = context.read<AudioProvider>().closeTime;
+    DateTime? closeDateTime = context.read<AudioProvider>().closeDateTime;
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -81,7 +81,7 @@ class _AudioState extends State<Audio> {
                     ),
                     selected: closeTime == e,
                     onTap: () {
-                      context.read<AudioProvide>().cancelTimer();
+                      context.read<AudioProvider>().cancelTimer();
                       Navigator.of(context).pop();
                     },
                   );
@@ -102,7 +102,7 @@ class _AudioState extends State<Audio> {
                   selected: closeTime == e,
                   trailing: trailing,
                   onTap: () {
-                    context.read<AudioProvide>().setCloseTime(e);
+                    context.read<AudioProvider>().setCloseTime(e);
                     Navigator.of(context).pop();
                   },
                 );
@@ -124,7 +124,9 @@ class _AudioState extends State<Audio> {
 
   @override
   Widget build(BuildContext context) {
-    int closeTime = context.select((AudioProvide a) => a.closeTime);
+    // 初始化audio
+    context.read<AudioProvider>().audioInit();
+    int closeTime = context.select((AudioProvider a) => a.closeTime);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       drawer: const MainDrawer(),
@@ -177,11 +179,9 @@ class _AudioState extends State<Audio> {
                               width: 180,
                               height: 180,
                               decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12),
                                 image: DecorationImage(
-                                  image: FileImage(
-                                      File(metadata.artUri!.path)),
+                                  image: FileImage(File(metadata.artUri!.path)),
                                   fit: BoxFit.cover,
                                 ),
                               ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:one/provider/authorize_provider.dart';
 import 'package:one/widgets/main_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:one/pages/accounts/accounts_chart.dart';
-import 'package:one/provide/authorize_provide.dart';
 
 class Accounts extends StatefulWidget {
   static const String sName = "/accounts";

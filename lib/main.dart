@@ -1,8 +1,8 @@
 import 'dart:async';
-
+import 'dart:ffi';
 import 'package:flutter/material.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:one/config/global.dart';
+import 'package:one/provider/theme_color_provider.dart';
 import 'package:one/utils/database_helper.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -17,36 +17,29 @@ import 'package:one/pages/home.dart';
 import 'package:one/pages/notes/notes.dart';
 import 'package:one/pages/setting/settting.dart';
 import 'package:one/pages/tools/tools.dart';
-import 'package:one/provide/audio_provide.dart';
-import 'package:one/provide/authorize_provide.dart';
+import 'package:one/provider/audio_provider.dart';
+import 'package:one/provider/authorize_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
-    androidNotificationChannelName: 'one Audio',
-    androidNotificationOngoing: true,
-  );
 
   Provider.debugCheckInvalidValueType = null;
   final provides = [
-    ChangeNotifierProvider(create: (_) => AudioProvide()),
+    ChangeNotifierProvider(create: (_) => ThemeColorProvider()),
+    ChangeNotifierProvider(create: (_) => AudioProvider()),
     ChangeNotifierProvider(create: (_) => AuthorizeProvide()),
   ];
   String defaultPage = await LocalStorage.getDefaultPage();
-  int themeColor = await LocalStorage.getThemeColor();
   runApp(MultiProvider(
       providers: provides,
       child: MyApp(
         defaultPage: defaultPage,
-        themeColor: themeColor,
       )));
 }
 
 class MyApp extends StatefulWidget {
   final String defaultPage;
-  final int themeColor;
-  const MyApp({super.key, required this.defaultPage, required this.themeColor});
+  const MyApp({super.key, required this.defaultPage});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -61,9 +54,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // 初始化audio
-    context.read<AudioProvide>().audioInit();
-
+    int? themeColor = context.watch<ThemeColorProvider>().themeColor;
+    if (themeColor == null) return const MaterialApp();
     return OverlaySupport.global(
       child: MaterialApp(
         title: Global.appName,
@@ -76,9 +68,9 @@ class _MyAppState extends State<MyApp> {
               margin: EdgeInsets.zero),
           colorScheme: ColorScheme.dark(
             surface: Color.fromARGB(248, 17, 17, 17),
-            primary: Color(widget.themeColor),
+            primary: Color(themeColor),
             onPrimary: Colors.white,
-            secondary: Color(widget.themeColor),
+            secondary: Color(themeColor),
           ),
         ),
         theme: ThemeData(
@@ -91,14 +83,14 @@ class _MyAppState extends State<MyApp> {
           ),
           appBarTheme: AppBarTheme(
             foregroundColor: Colors.white,
-            backgroundColor: Color(widget.themeColor),
+            backgroundColor: Color(themeColor),
           ),
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Color(widget.themeColor),
-            primary: Color(widget.themeColor),
+            seedColor: Color(themeColor),
+            primary: Color(themeColor),
             secondary: Colors.black87,
           ),
-          secondaryHeaderColor: Color(widget.themeColor).withAlpha(35),
+          secondaryHeaderColor: Color(themeColor).withAlpha(35),
           useMaterial3: true,
         ),
         initialRoute: widget.defaultPage,

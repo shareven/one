@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:one/provider/audio_provider.dart';
 import 'package:one/utils/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
 import 'package:one/pages/audio/add_book.dart';
-import 'package:one/provide/audio_provide.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/widgets/nodatafound.dart';
 
@@ -38,7 +38,7 @@ class _BooksState extends State<Books> {
         notInList.add(e);
       }
     }
-    books.insertAll(0,notInList);
+    books.insertAll(0, notInList);
     setState(() {
       _books = books;
       _currentBook = book;
@@ -74,7 +74,7 @@ class _BooksState extends State<Books> {
   Future _deleteBook(BookModel book) async {
     if (_currentBook != null && _currentBook!.name == book.name) {
       await LocalStorage.setCurrentBookVal(null);
-      if (mounted) context.read<AudioProvide>().setPlayBookItems();
+      if (mounted) context.read<AudioProvider>().setPlayBookItems();
       setState(() {
         _currentBook = null;
       });
@@ -83,7 +83,7 @@ class _BooksState extends State<Books> {
     books.removeWhere((e) => e.name == book.name);
     List list = books.map((e) => e.toJson()).toList();
     LocalStorage.setBooksVal(list);
-    
+
     List<BookModel> notInList = [];
     for (var i = 0; i < Global.books.length; i++) {
       var e = Global.books[i];
@@ -92,7 +92,7 @@ class _BooksState extends State<Books> {
         notInList.add(e);
       }
     }
-    books.insertAll(0,notInList);
+    books.insertAll(0, notInList);
     setState(() {
       _books = books;
     });
@@ -129,7 +129,7 @@ class _BooksState extends State<Books> {
                           onTap: (val) async {
                             await _setCurrentBook(e);
                             if (mounted)
-                              context.read<AudioProvide>().setPlayBookItems();
+                              context.read<AudioProvider>().setPlayBookItems();
                           },
                           onDelete: _handleDelete))
                       .toList(),

@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:one/provide/audio_provide.dart';
+import 'package:one/provider/audio_provider.dart';
 import 'package:one/utils/local_storage.dart';
 
 class SettingBook extends StatefulWidget {
@@ -57,7 +57,7 @@ class _SettingBookState extends State<SettingBook> {
     await LocalStorage.setLocalBookDirectory(_selectedDirectory);
 
     if (isSuccess && mounted) {
-      context.read<AudioProvide>().audioInit();
+      context.read<AudioProvider>().audioRun();
 
       Navigator.pop(context);
     }

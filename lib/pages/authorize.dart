@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:one/provider/authorize_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:one/provide/authorize_provide.dart';
 import 'package:one/widgets/main_drawer.dart';
 
 class Authorize extends StatefulWidget {

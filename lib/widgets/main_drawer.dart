@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:one/provider/authorize_provider.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/utils/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:one/pages/about.dart';
-import 'package:one/provide/authorize_provide.dart';
 import 'package:one/utils/navigator_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 

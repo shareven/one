@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:one/config/global.dart';
-import 'package:one/utils/local_storage.dart';
+import 'package:one/provider/theme_color_provider.dart';
 
 class SettingTheme extends StatefulWidget {
   const SettingTheme({super.key});
@@ -10,32 +11,18 @@ class SettingTheme extends StatefulWidget {
 }
 
 class _SettingThemeState extends State<SettingTheme> {
-  int themeColor = Global.themeColor.alpha;
   @override
   void initState() {
     super.initState();
-    getthemeColor();
-  }
-
-  void getthemeColor() async {
-    int color = await LocalStorage.getThemeColor();
-    setState(() {
-      themeColor = color;
-    });
-  }
-
-  void setthemeColor(int color) async {
-    setState(() {
-      themeColor = color;
-    });
-    await LocalStorage.setThemeColor(color);
   }
 
   @override
   Widget build(BuildContext context) {
+    int themeColor = context.watch<ThemeColorProvider>().themeColor ??
+        Global.themeColor.value;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("设置主题色（需重启）"),
+        title: const Text("设置主题色"),
       ),
       body: ListView(
         children: Global.themeColors
@@ -50,9 +37,10 @@ class _SettingThemeState extends State<SettingTheme> {
                       ),
                     ),
                   ),
-                  onTap: () => setthemeColor(e.value),
+                  onTap: () =>
+                      context.read<ThemeColorProvider>().setThemeColor(e.value),
                   trailing: e.value == themeColor
-                      ?  Icon(
+                      ? Icon(
                           size: 30,
                           Icons.check,
                           color: Theme.of(context).colorScheme.primary,

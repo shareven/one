@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
+import 'package:one/utils/utils.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -35,12 +37,20 @@ class DatabaseHelper {
     return path;
   }
 
-  Future<Database> initDataBase() async {
+  Future<Database?> initDataBase() async {
     WidgetsFlutterBinding.ensureInitialized();
-    String path = await _getDbPath();
-    // Open the database and store its reference.
-    return await openDatabase(path,
-        version: 1, onCreate: _onCreate, password: "doadjfaksdf435432534n4lm");
+    try {
+      String path = await _getDbPath();
+      // Open the database and store its reference.
+      Database db = await openDatabase(path,
+          version: 1,
+          onCreate: _onCreate,
+          password: "doadjfaksdf435432534n4lm");
+      return db;
+    } catch (e) {
+      showErrorMsg(e.toString());
+    }
+    return null;
   }
 
   Future _onCreate(Database db, int version) async {

@@ -11,9 +11,9 @@ import 'package:one/utils/utils.dart';
 
 AudioPlayer player = AudioPlayer();
 
-class AudioProvide with ChangeNotifier {
+class AudioProvider with ChangeNotifier {
   ConcatenatingAudioSource _playlist = ConcatenatingAudioSource(children: []);
-
+  bool _isInit = false;
   // 0 表示不开启
   int closeTime = 0;
   // 关闭时间
@@ -78,13 +78,24 @@ class AudioProvide with ChangeNotifier {
   }
 
   Future<void> audioInit() async {
+    if (_isInit) return;
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+      androidNotificationChannelName: 'one Audio',
+      androidNotificationOngoing: true,
+    );
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
-    List<Duration> bookSkipSeconds = await LocalStorage.getPlaySkipSeconds();
-
     // Listen to errors during playback.
     player.playbackEventStream
         .listen((event) {}, onError: (Object e, StackTrace stackTrace) {});
+    _isInit = true;
+    notifyListeners();
+    audioRun();
+  }
+
+  Future<void> audioRun() async {
+    List<Duration> bookSkipSeconds = await LocalStorage.getPlaySkipSeconds();
 
     // 如果subscriptionPlayStream不为null，则取消它
     if (subscriptionPlayStream != null) {
@@ -143,6 +154,7 @@ class AudioProvide with ChangeNotifier {
     List<AudioSource> list = await _getCurrentBookItems();
     _playlist = ConcatenatingAudioSource(children: list);
     try {
+      if (player.playing) await player.pause();
       await player.setAudioSource(_playlist);
     } catch (e) {
       showErrorMsg(e.toString());
