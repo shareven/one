@@ -27,6 +27,7 @@ class Audio extends StatefulWidget {
 
 class _AudioState extends State<Audio> {
   final ScrollController _scrollController = ScrollController();
+  bool isInit = false;
 
   @override
   void initState() {
@@ -56,6 +57,9 @@ class _AudioState extends State<Audio> {
         print(e);
       }
     }
+    setState(() {
+      isInit = true;
+    });
   }
 
   Future<void> setCloseTime(BuildContext context) {
@@ -197,7 +201,12 @@ class _AudioState extends State<Audio> {
                 },
               ),
             ),
-            ControlButtons(player),
+            isInit? ControlButtons(player):Container(
+              margin: const EdgeInsets.all(8.0),
+              width: 64.0,
+              height: 64.0,
+              child: const CircularProgressIndicator(),
+            ),
             StreamBuilder<PositionData>(
               stream: _positionDataStream,
               builder: (context, snapshot) {

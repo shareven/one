@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:one/provider/audio_provider.dart';
 import 'package:one/utils/utils.dart';
 import 'package:provider/provider.dart';
@@ -195,6 +196,11 @@ class _LeaveBehindListItem extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
+              onLongPress: () async {
+                await Clipboard.setData(
+                    ClipboardData(text: item.artUrl + item.name));
+                showSuccessMsg("已复制图片链接和书名");
+              },
               subtitle: Text("${item.start}-${item.end}集"),
               selected: item.name == currentBook?.name,
               selectedColor: Theme.of(context).colorScheme.primary,
