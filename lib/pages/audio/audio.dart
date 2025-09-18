@@ -28,6 +28,7 @@ class Audio extends StatefulWidget {
 class _AudioState extends State<Audio> {
   final ScrollController _scrollController = ScrollController();
   bool isInit = false;
+  AudioProvider? _audioProvider;
 
   @override
   void initState() {
@@ -37,6 +38,20 @@ class _AudioState extends State<Audio> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       getRecord();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 保存AudioProvider引用以便在dispose中安全使用
+    _audioProvider = context.read<AudioProvider>();
+  }
+
+  @override
+  void dispose() {
+    // 清理回调避免内存泄漏
+    _audioProvider?.setOnPlayStateRestored(null);
+    super.dispose();
   }
 
 // 滚动到当前集
@@ -51,8 +66,27 @@ class _AudioState extends State<Audio> {
     BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
       try {
-        await Future.delayed(const Duration(milliseconds: 600));
-        scrollToItem(res.playRecordIndex);
+        // 检查播放器是否已经有当前播放的内容
+        if (player.currentIndex != null && player.sequence.isNotEmpty) {
+          // 播放器已经初始化，直接滚动到当前位置
+          Future.delayed(Duration.zero, () {
+            if (mounted) {
+              scrollToItem(player.currentIndex!);
+            }
+          });
+        } else {
+          // 播放器还未初始化，设置回调等待初始化完成
+          context.read<AudioProvider>().setOnPlayStateRestored(() {
+            if (mounted) {
+              // 使用Future.delayed确保在下一帧执行，避免在build过程中调用setState
+              Future.delayed(Duration.zero, () {
+                if (mounted) {
+                  scrollToItem(res.playRecordIndex);
+                }
+              });
+            }
+          });
+        }
       } catch (e) {
         print(e);
       }
@@ -324,7 +358,7 @@ class ControlButtons extends StatelessWidget {
                 icon: const Icon(Icons.replay),
                 iconSize: 64.0,
                 onPressed: () => player.seek(Duration.zero,
-                    index: player.effectiveIndices!.first),
+                    index: player.effectiveIndices.first),
               );
             }
           },

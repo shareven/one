@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:one/config/global.dart';
 import 'package:one/provider/theme_color_provider.dart';
 import 'package:one/utils/database_helper.dart';
@@ -22,7 +22,11 @@ import 'package:one/provider/authorize_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.one.one.channel.audio',
+    androidNotificationChannelName: 'one Audio',
+    androidNotificationOngoing: true,
+  );
   Provider.debugCheckInvalidValueType = null;
   final provides = [
     ChangeNotifierProvider(create: (_) => ThemeColorProvider()),
@@ -62,7 +66,7 @@ class _MyAppState extends State<MyApp> {
         themeMode: ThemeMode.system,
         darkTheme: ThemeData(
           brightness: Brightness.dark,
-          cardTheme: const CardTheme(
+          cardTheme: const CardThemeData(
               color: Color.fromARGB(221, 28, 28, 28),
               elevation: 0,
               margin: EdgeInsets.zero),
@@ -74,9 +78,9 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         theme: ThemeData(
-          cardTheme: const CardTheme(
+          cardTheme: const CardThemeData(
               color: Colors.white, elevation: 0, margin: EdgeInsets.zero),
-          tabBarTheme: const TabBarTheme(
+          tabBarTheme: const TabBarThemeData(
             labelColor: Colors.white,
             indicatorColor: Colors.white,
             unselectedLabelColor: Colors.white54,

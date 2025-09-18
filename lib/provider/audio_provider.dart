@@ -22,6 +22,13 @@ class AudioProvider with ChangeNotifier {
   Timer? _timer;
   //播放流订阅
   StreamSubscription<Duration>? subscriptionPlayStream;
+  // 播放状态恢复完成回调
+  VoidCallback? _onPlayStateRestored;
+
+  // 设置播放状态恢复完成回调
+  void setOnPlayStateRestored(VoidCallback? callback) {
+    _onPlayStateRestored = callback;
+  }
 
   // 取消定时关闭任务
   void cancelTimer() {
@@ -79,11 +86,7 @@ class AudioProvider with ChangeNotifier {
 
   Future<void> audioInit() async {
     if (_isInit) return;
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
-      androidNotificationChannelName: 'one Audio',
-      androidNotificationOngoing: true,
-    );
+    
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
     // Listen to errors during playback.
@@ -168,6 +171,12 @@ class AudioProvider with ChangeNotifier {
     if (res != null) {
       await player.seek(Duration(seconds: res.playRecordInSeconds),
           index: res.playRecordIndex);
+      // 等待一小段时间确保播放器状态更新完成
+      await Future.delayed(const Duration(milliseconds: 100));
+      // 调用回调通知UI播放状态已恢复
+      if (_onPlayStateRestored != null) {
+        _onPlayStateRestored!();
+      }
     }
   }
 
