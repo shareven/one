@@ -12,7 +12,6 @@ import 'package:one/utils/utils.dart';
 AudioPlayer player = AudioPlayer();
 
 class AudioProvider with ChangeNotifier {
-  ConcatenatingAudioSource _playlist = ConcatenatingAudioSource(children: []);
   bool _isInit = false;
   // 0 表示不开启
   int closeTime = 0;
@@ -24,6 +23,10 @@ class AudioProvider with ChangeNotifier {
   StreamSubscription<Duration>? subscriptionPlayStream;
   // 播放状态恢复完成回调
   VoidCallback? _onPlayStateRestored;
+  // 防止 `_setSource` 方法的并发调用
+  bool _isSettingSource = false;
+  // 是否已获取播放记录
+  bool isGetRecord = false;
 
   // 设置播放状态恢复完成回调
   void setOnPlayStateRestored(VoidCallback? callback) {
@@ -86,7 +89,7 @@ class AudioProvider with ChangeNotifier {
 
   Future<void> audioInit() async {
     if (_isInit) return;
-    
+
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
     // Listen to errors during playback.
@@ -135,6 +138,7 @@ class AudioProvider with ChangeNotifier {
   }
 
   setPlayBookItems() async {
+    _isSettingSource = false;
     try {
       // 请求权限 | Permission request
       await Permission.audio.request();
@@ -154,11 +158,12 @@ class AudioProvider with ChangeNotifier {
   }
 
   _setSource() async {
+    if (_isSettingSource) return;
+    _isSettingSource = true;
     List<AudioSource> list = await _getCurrentBookItems();
-    _playlist = ConcatenatingAudioSource(children: list);
     try {
       if (player.playing) await player.pause();
-      await player.setAudioSource(_playlist);
+      await player.setAudioSources(list);
     } catch (e) {
       showErrorMsg(e.toString());
     }
@@ -173,11 +178,13 @@ class AudioProvider with ChangeNotifier {
           index: res.playRecordIndex);
       // 等待一小段时间确保播放器状态更新完成
       await Future.delayed(const Duration(milliseconds: 100));
-      // 调用回调通知UI播放状态已恢复
+      // // 调用回调通知UI播放状态已恢复
       if (_onPlayStateRestored != null) {
         _onPlayStateRestored!();
       }
     }
+    isGetRecord = true;
+    notifyListeners();
   }
 
   void _setPlayRecord(int currentIndex, int inSeconds) async {

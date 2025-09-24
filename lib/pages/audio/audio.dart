@@ -164,7 +164,9 @@ class _AudioState extends State<Audio> {
   Widget build(BuildContext context) {
     // 初始化audio
     context.read<AudioProvider>().audioInit();
+    bool isGetRecord = context.watch<AudioProvider>().isGetRecord;
     int closeTime = context.select((AudioProvider a) => a.closeTime);
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       drawer: const MainDrawer(),
@@ -227,20 +229,22 @@ class _AudioState extends State<Audio> {
                           ),
                         ),
                       ),
-                      Text(metadata.album!,
+                      Text(isInit && isGetRecord ? metadata.album! : "",
                           style: Theme.of(context).textTheme.titleLarge),
-                      Text(metadata.title),
+                      Text(isInit && isGetRecord ? metadata.title : ""),
                     ],
                   );
                 },
               ),
             ),
-            isInit? ControlButtons(player):Container(
-              margin: const EdgeInsets.all(8.0),
-              width: 64.0,
-              height: 64.0,
-              child: const CircularProgressIndicator(),
-            ),
+            isInit && isGetRecord
+                ? ControlButtons(player)
+                : Container(
+                    margin: const EdgeInsets.all(8.0),
+                    width: 64.0,
+                    height: 64.0,
+                    child: const CircularProgressIndicator(),
+                  ),
             StreamBuilder<PositionData>(
               stream: _positionDataStream,
               builder: (context, snapshot) {
