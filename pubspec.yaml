@@ -16,10 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.8+1
+version: 1.0.9+9
 
 environment:
-  sdk: ^3.5.2
+  sdk: ^3.10.4
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -35,27 +35,27 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   
-  intl: ^0.19.0
-  
-  syncfusion_flutter_charts: ^27.1.51
+  intl: ^0.20.2
+
+  syncfusion_flutter_charts: ^32.1.19
   pull_to_refresh: ^2.0.0
-  shared_preferences: ^2.0.20
-  package_info_plus: ^8.2.1
-  provider: ^6.1.2
+  shared_preferences: ^2.5.4
+  package_info_plus: ^9.0.0
+  provider: ^6.1.5
   overlay_support: ^2.1.0
-  file_picker: ^8.0.3
+  file_picker: ^10.3.7
   #指纹或面部
-  local_auth: ^2.2.0
+  local_auth: ^3.0.0
   
   audio_session: ^0.2.2
   just_audio: ^0.10.5
   just_audio_background: ^0.0.1-beta.17
   rxdart: ^0.28.0
-  permission_handler: ^11.3.1
-  sqflite_sqlcipher: ^3.1.0+1
+  permission_handler: ^12.0.1
+  sqflite_sqlcipher: ^3.4.0
   path: ^1.9.0
 
-  url_launcher: ^6.3.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

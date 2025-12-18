@@ -179,3 +179,8 @@ awdfadfadf(BuildContext context, String val, List<String>? list,
     ),
   );
 }
+
+Color lighten(Color color, double factor) {
+  assert(factor >= 0 && factor <= 1);
+  return Color.lerp(color, Colors.white, factor)!;
+}

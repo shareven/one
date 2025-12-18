@@ -5,6 +5,7 @@ import 'package:one/config/global.dart';
 import 'package:one/provider/theme_color_provider.dart';
 import 'package:one/utils/database_helper.dart';
 import 'package:one/utils/local_storage.dart';
+import 'package:one/utils/utils.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import 'package:one/pages/about.dart';
@@ -94,7 +95,7 @@ class _MyAppState extends State<MyApp> {
             primary: Color(themeColor),
             secondary: Colors.black87,
           ),
-          secondaryHeaderColor: Color(themeColor).withAlpha(35),
+          secondaryHeaderColor: lighten(Color(themeColor),0.8),
           useMaterial3: true,
         ),
         initialRoute: widget.defaultPage,

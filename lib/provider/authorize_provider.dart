@@ -24,8 +24,9 @@ class AuthorizeProvide with ChangeNotifier {
           availableBiometrics.contains(BiometricType.face)) {
         auth.stopAuthentication();
         didAuthemticate = await auth.authenticate(
-            localizedReason: '请验证指纹或面部',
-            options: const AuthenticationOptions(biometricOnly: true));
+          localizedReason: '请验证指纹或面部',
+          biometricOnly: true,
+        );
       } else {
         showErrorMsg("未添加指纹或面部");
       }
