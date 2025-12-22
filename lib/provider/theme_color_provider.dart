@@ -5,10 +5,10 @@ class ThemeColorProvider with ChangeNotifier {
   int? themeColor ;
 
   ThemeColorProvider() {
-    _getThemeColor();
+    getThemeColor();
   }
 
-  void _getThemeColor() async {
+  void getThemeColor() async {
     themeColor = await LocalStorage.getThemeColor();
     notifyListeners();
   }

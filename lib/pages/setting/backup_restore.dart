@@ -3,9 +3,13 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:one/provider/theme_color_provider.dart';
 import 'package:one/utils/database_helper.dart';
 import 'package:one/utils/loading.dart';
+import 'package:one/utils/local_storage.dart';
 import 'package:one/utils/utils.dart';
+import 'package:provider/provider.dart';
 
 class BackupRestore extends StatefulWidget {
   const BackupRestore({super.key});
@@ -21,6 +25,12 @@ class _BackupRestoreState extends State<BackupRestore> {
 
       if (selectedDirectory != null) {
         Loading.showLoading(context);
+
+        String rdataMapes = await LocalStorage.getAllStorage();
+        await File(
+          "$selectedDirectory/one-backup-${DateFormat("yyyyMMddHHmmss").format(DateTime.now())}.json",
+        ).writeAsString(rdataMapes);
+
         await databaseHelper.backupDatabase(selectedDirectory);
         Loading.hideLoading(context);
         showSuccessMsg("备份完成");
@@ -32,7 +42,7 @@ class _BackupRestoreState extends State<BackupRestore> {
     }
   }
 
-  restore() async {
+  restoreDb() async {
     try {
       FilePickerResult? filesResult = await FilePicker.platform.pickFiles();
 
@@ -56,12 +66,36 @@ class _BackupRestoreState extends State<BackupRestore> {
     }
   }
 
+  restoreJson() async {
+    try {
+      FilePickerResult? filesResult = await FilePicker.platform.pickFiles();
+
+      if (filesResult != null &&
+          filesResult.count != 0 &&
+          filesResult.files[0].path != null) {
+        if (filesResult.files[0].extension != "json") {
+          showErrorMsg("请选择备份的json文件");
+          return;
+        }
+        Loading.showLoading(context);
+        String jsonMap = await File(filesResult.files[0].path!).readAsString();
+
+        await LocalStorage.setAllStorage(jsonMap);
+        Loading.hideLoading(context);
+        showSuccessMsg("还原完成");
+        context.read<ThemeColorProvider>().getThemeColor();
+      }
+    } catch (e) {
+      print(e);
+      if (mounted) Loading.hideLoading(context);
+      showErrorMsg("还原失败,$e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("备份与还原数据库"),
-      ),
+      appBar: AppBar(title: Text("备份与还原")),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -70,7 +104,8 @@ class _BackupRestoreState extends State<BackupRestore> {
               height: 80,
               child: Column(
                 children: [
-                  Text("数据库包含账单,便签,宝贝,健康等数据，"),
+                  Text("数据库包含账单,便签,宝贝,健康等数据，备份为db文件"),
+                  Text("听书内容和各模块的设置，备份为json文件"),
                   Text("备份目录建议选Documents"),
                 ],
               ),
@@ -85,8 +120,15 @@ class _BackupRestoreState extends State<BackupRestore> {
             Padding(
               padding: const EdgeInsets.all(15.0),
               child: FilledButton(
-                onPressed: restore,
+                onPressed: restoreDb,
                 child: const Text("选择还原的db文件"),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: FilledButton(
+                onPressed: restoreJson,
+                child: const Text("选择还原的json文件"),
               ),
             ),
           ],

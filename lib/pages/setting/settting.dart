@@ -41,7 +41,7 @@ class _SettingState extends State<Setting> {
             leading: const Icon(
               Icons.settings_backup_restore_rounded,
             ),
-            title: const Text("备份与还原数据库"),
+            title: const Text("备份与还原"),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (BuildContext context) => const BackupRestore())),
           )

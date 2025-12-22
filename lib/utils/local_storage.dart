@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:one/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
@@ -181,4 +182,53 @@ class LocalStorage {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(themeColorKey) ?? Global.themeColor.value;
   }
+
+  static Future<String> getAllStorage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // 创建可序列化的Map
+    final Map<String, dynamic> exportData = {};
+
+    for (final key in prefs.getKeys()) {
+      final value = prefs.get(key);
+
+      // 处理特殊类型
+      if (value is List<String>) {
+        exportData[key] = value; // 字符串列表可直接存储
+      } else if (value != null) {
+        exportData[key] = value; // 基础类型(int, double, bool, String)
+      }
+    }
+
+    return jsonEncode(exportData);
+  }
+
+  static Future<bool> setAllStorage(String jsonData) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final Map<String, dynamic> data = jsonDecode(jsonData);
+
+      for (final key in data.keys) {
+        final value = data[key];
+
+        // 根据实际类型恢复数据
+        if (value is int) {
+          await prefs.setInt(key, value);
+        } else if (value is double) {
+          await prefs.setDouble(key, value);
+        } else if (value is bool) {
+          await prefs.setBool(key, value);
+        } else if (value is String) {
+          await prefs.setString(key, value);
+        } else if (value is List<dynamic>) {
+          // 转换为字符串列表
+          await prefs.setStringList(key, value.cast<String>());
+        }
+      }
+      return true;
+    } catch (e) {
+      showErrorMsg(e.toString());
+      return false;
+    }
+  }
 }
+

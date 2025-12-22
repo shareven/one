@@ -16,7 +16,7 @@ void showErrorMsg(String msg) {
       Icons.error,
       color: Colors.white,
     ),
-    duration: const Duration(seconds: 3),
+    duration: const Duration(seconds: 6),
     position: NotificationPosition.bottom,
     background: Colors.red,
   );
