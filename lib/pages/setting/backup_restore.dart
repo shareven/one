@@ -57,12 +57,12 @@ class _BackupRestoreState extends State<BackupRestore> {
         Uint8List? data = await File(filesResult.files[0].path!).readAsBytes();
         databaseHelper.restoreDatabase(data);
         Loading.hideLoading(context);
-        showSuccessMsg("还原完成");
+        showSuccessMsg("db文件还原完成");
       }
     } catch (e) {
       print(e);
       if (mounted) Loading.hideLoading(context);
-      showErrorMsg("还原失败,$e");
+      showErrorMsg("db文件还原失败,$e");
     }
   }
 
@@ -82,13 +82,13 @@ class _BackupRestoreState extends State<BackupRestore> {
 
         await LocalStorage.setAllStorage(jsonMap);
         Loading.hideLoading(context);
-        showSuccessMsg("还原完成");
+        showSuccessMsg("json文件还原完成");
         context.read<ThemeColorProvider>().getThemeColor();
       }
     } catch (e) {
       print(e);
       if (mounted) Loading.hideLoading(context);
-      showErrorMsg("还原失败,$e");
+      showErrorMsg("json文件还原失败,$e");
     }
   }
 
