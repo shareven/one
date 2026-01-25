@@ -321,10 +321,12 @@ class _AudioState extends State<Audio> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: _buildCoverImage(
-                          metadata.extras?['artUrl'] ?? metadata.artUri,
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(15),
+                          child: _buildCoverImage(
+                            metadata.extras?['artUrl'] ?? metadata.artUri,
+                          ),
                         ),
                       ),
                       ConstrainedBox(
@@ -344,12 +346,13 @@ class _AudioState extends State<Audio> {
                         child: Text(
                           isInit && isGetRecord ? metadata.album ?? "" : "",
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                              ?.copyWith(fontSize: 12,color: colorScheme.onSurfaceVariant),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(height: 8),
                     ],
                   );
                 },
@@ -447,15 +450,13 @@ class ControlButtons extends StatelessWidget {
         StreamBuilder<Duration>(
           stream: player.positionStream,
           builder: (context, snapshot) {
-            final positionData = snapshot.data;
+            final position = snapshot.data ?? Duration.zero;
+            final canRewind = position > const Duration(seconds: 10);
             return IconButton(
               icon: const Icon(Icons.replay_10_rounded),
               iconSize: 44.0,
-              onPressed: player.duration != null
-                  ? () => player.seek(
-                      (positionData ?? Duration.zero) -
-                          const Duration(seconds: 10),
-                    )
+              onPressed: player.duration != null && canRewind
+                  ? () => player.seek(position - const Duration(seconds: 10))
                   : null,
             );
           },
@@ -501,15 +502,15 @@ class ControlButtons extends StatelessWidget {
         StreamBuilder<Duration>(
           stream: player.positionStream,
           builder: (context, snapshot) {
-            final positionData = snapshot.data;
+            final position = snapshot.data ?? Duration.zero;
+            final duration = player.duration ?? Duration.zero;
+            final canForward =
+                position < duration - const Duration(seconds: 10);
             return IconButton(
               icon: const Icon(Icons.forward_10_rounded),
               iconSize: 44.0,
-              onPressed: player.duration != null
-                  ? () => player.seek(
-                      (positionData ?? Duration.zero) +
-                          const Duration(seconds: 10),
-                    )
+              onPressed: duration != Duration.zero && canForward
+                  ? () => player.seek(position + const Duration(seconds: 10))
                   : null,
             );
           },

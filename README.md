@@ -33,7 +33,7 @@ ios用户，需要你clone源码后，自行调试和打包了。
 
 默认手机存放音频目录是`设备存储/Music/book/`,可以修改。
 
-如果你是从ximalaya下载音频文件，可以先用xiamalaya官方pc客户端下载，然后用[Ximalaya-XM-Decrypt](https://github.com/Diaoxiaozhang/Ximalaya-XM-Decrypt)解密成m4a文件，再用项目里的renama-audiofiles.sh(需修改directory)重命名m4a文件。
+如果你是从ximalaya下载音频文件，可以先用xiamalaya官方pc客户端下载，然后用[Ximalaya-XM-Decrypt](https://github.com/Diaoxiaozhang/Ximalaya-XM-Decrypt)解密成m4a文件。
 
 
 # 备份与还原数据库
