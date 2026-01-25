@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:one/model/book_model.dart';
+import 'package:one/utils/audio_scanner.dart';
 import 'package:one/utils/local_storage.dart';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:one/utils/utils.dart';
+import 'package:one/utils/json_storage.dart';
 
 class AddBook extends StatefulWidget {
   const AddBook({super.key});
@@ -15,234 +15,283 @@ class AddBook extends StatefulWidget {
 }
 
 class _AddBookState extends State<AddBook> {
-  final _formKey = GlobalKey<FormState>();
-  bool _enableBtn = false;
-  final TextEditingController _bookNameController =
-      TextEditingController(text: "");
-  final TextEditingController _startController =
-      TextEditingController(text: "1");
-  final TextEditingController _endController = TextEditingController(text: "");
-  final FocusNode _focusNodeBookName = FocusNode();
-  final FocusNode _focusNodeStart = FocusNode();
-  final FocusNode _focusNodeEnd = FocusNode();
-  String? _artUrl;
+  final TextEditingController _bookDirectoryController = TextEditingController(
+    text: "",
+  );
+
+  String _bookDirectory = "";
+  List<BookModel> _scannedBooks = [];
+  Set<String> _selectedBooks = {};
+  bool _isScanning = false;
+
+  static Color _parseColor(String colorStr) {
+    if (colorStr.startsWith('color:')) {
+      List<String> parts = colorStr.substring(6).split(',');
+      if (parts.length == 3) {
+        return Color.fromRGBO(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+          1.0,
+        );
+      }
+    }
+    return Colors.grey;
+  }
+
+  Widget _buildBookCover(String artUrl, double size) {
+    if (artUrl.startsWith('color:')) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: _parseColor(artUrl),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.book, color: Colors.white),
+      );
+    } else {
+      bool exists = File(artUrl).existsSync();
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: exists ? null : Colors.grey[300],
+          image: exists
+              ? DecorationImage(
+                  image: FileImage(File(artUrl)),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: !exists
+            ? const Icon(Icons.broken_image, color: Colors.grey)
+            : null,
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _initBookDirectory();
+  }
+
+  Future _initBookDirectory() async {
+    String path = await LocalStorage.getLocalBookDirectory();
+    setState(() {
+      _bookDirectory = path;
+      _bookDirectoryController.text = path;
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
-    _focusNodeBookName.dispose();
-    _focusNodeStart.dispose();
-    _focusNodeEnd.dispose();
-    _bookNameController.dispose();
-    _startController.dispose();
-    _endController.dispose();
+    _bookDirectoryController.dispose();
   }
 
-  Future _seletctImg() async {
-    FilePickerResult? res =
-        await FilePicker.platform.pickFiles(type: FileType.image);
-    if (res != null && res.count != 0 && res.files[0].path != null) {
-      String imgPath = res.files[0].path!;
-      Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String fileName = DateFormat("yyyyMMddHHmmss").format(DateTime.now()) +
-          res.files[0].name;
-      String newPath = join(documentsDirectory.path, fileName);
-
-      await File(imgPath).copy(newPath);
+  Future _selectBookDirectory() async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory != null) {
+      await LocalStorage.setLocalBookDirectory(selectedDirectory);
       setState(() {
-        _artUrl = newPath;
+        _bookDirectory = selectedDirectory;
+        _bookDirectoryController.text = selectedDirectory;
+      });
+      showSuccessMsg("听书目录已设置: $selectedDirectory");
+    }
+  }
+
+  Future _scanBooksDirectory() async {
+    if (_bookDirectory.isEmpty) {
+      showErrorMsg("请先设置听书目录");
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _scannedBooks = [];
+      _selectedBooks = {};
+    });
+
+    try {
+      List<BookModel> books = await AudioScanner.scanBooksDirectory(
+        _bookDirectory,
+      );
+      setState(() {
+        _scannedBooks = books;
+        _selectedBooks = Set.from(books.map((e) => e.name));
+      });
+
+      if (books.isEmpty) {
+        showErrorMsg("未找到任何听书书籍");
+      } else {
+        showSuccessMsg("扫描完成，找到 ${books.length} 本书");
+      }
+    } catch (e) {
+      showErrorMsg("扫描失败: $e");
+    } finally {
+      setState(() {
+        _isScanning = false;
       });
     }
   }
 
-  Future _post(BuildContext context) async {
-    int? start = int.tryParse(_startController.text);
-    int? end = int.tryParse(_endController.text);
-    BookModel book =
-        BookModel(_bookNameController.text, _artUrl!, start!, end!);
-    List<BookModel> books = await LocalStorage.getBooksVal();
-    int index = books.indexWhere((e) => e.name == book.name);
-    if (index != -1) {
-      books.removeAt(index);
+  void _toggleBookSelection(String bookName) {
+    setState(() {
+      if (_selectedBooks.contains(bookName)) {
+        _selectedBooks.remove(bookName);
+      } else {
+        _selectedBooks.add(bookName);
+      }
+    });
+  }
+
+  void _selectAllBooks() {
+    setState(() {
+      if (_selectedBooks.length == _scannedBooks.length) {
+        _selectedBooks.clear();
+      } else {
+        _selectedBooks = Set.from(_scannedBooks.map((e) => e.name));
+      }
+    });
+  }
+
+  Future _importSelectedBooks() async {
+    if (_selectedBooks.isEmpty) {
+      showErrorMsg("请先选择要导入的书籍");
+      return;
     }
-    books.insert(0, book);
-    List list = books.map((e) => e.toJson()).toList();
-    LocalStorage.setBooksVal(list);
-    if (mounted) Navigator.pop(context);
+
+    int importCount = 0;
+
+    for (var book in _scannedBooks) {
+      if (_selectedBooks.contains(book.name)) {
+        await JsonStorage.saveBook(book);
+        importCount++;
+      }
+    }
+
+    if (mounted) {
+      showSuccessMsg("成功导入 $importCount 本书");
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("添加书"),
-          actions: [
-            IconButton(
-                onPressed:
-                    _enableBtn && _artUrl != null ? () => _post(context) : null,
-                icon: const Icon(Icons.check))
-          ],
-        ),
-        body: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          onChanged: () =>
-              setState(() => _enableBtn = _formKey.currentState!.validate()),
-          child: ListView(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: TextFormField(
-                  validator: (v) {
-                    if (v != null && v.trim().isEmpty) {
-                      return "不能为空 | Required";
-                    }
-                    return null;
-                  },
-                  focusNode: _focusNodeBookName,
-                  controller: _bookNameController,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (e) => _focusNodeEnd.requestFocus(),
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(1),
-                    hintText: "书名 | Book name",
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: FilledButton(
-                      onPressed: _seletctImg,
-                      child: const Text("选择封面图片"),
-                    ),
-                  ),
-                  _artUrl != null
-                      ? Padding(
-                          padding: const EdgeInsets.all(15.0),
-                          child: Image.file(
-                            File(
-                              _artUrl!,
-                            ),
-                            height: 40,
-                          ),
-                        )
-                      : Container(),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: TextFormField(
-                  validator: (v) {
-                    String val = v!.trim();
-                    if (val.isEmpty) return "不能为空 | Required";
-                    if (int.tryParse(val) == null || int.parse(val) < 0) {
-                      return "不是正整数 | Must positive integer";
-                    }
-                    return null;
-                  },
-                  keyboardType: TextInputType.number,
-                  focusNode: _focusNodeStart,
-                  controller: _startController,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (e) => _focusNodeEnd.requestFocus(),
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(1),
-                    hintText: "开始集数 | Start Episode",
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: TextFormField(
-                  validator: (v) {
-                    String val = v!.trim();
-                    if (val.isEmpty) return "不能为空 | Required";
-                    if (int.tryParse(val) == null || int.parse(val) < 0) {
-                      return "不是正整数 | Must positive integer";
-                    }
-                    return null;
-                  },
-                  keyboardType: TextInputType.number,
-                  focusNode: _focusNodeEnd,
-                  controller: _endController,
-                  onFieldSubmitted: _enableBtn && _artUrl != null
-                      ? (e) => _post(context)
-                      : null,
-                  textInputAction: TextInputAction.send,
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(1),
-                    hintText: "结束集数 | End Episode",
-                  ),
-                ),
-              ),
-              textWidget(context),
-            ],
-          ),
-        ));
-  }
-
-  Widget textWidget(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(15.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(title: const Text("添加书")),
+      body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            child: Text(
-              "命名规则 | Naming convention",
-              style: Theme.of(context).textTheme.bodyLarge,
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _bookDirectoryController,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.all(1),
+                      hintText: "听书目录路径",
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: FilledButton(
+                    onPressed: _selectBookDirectory,
+                    child: const Text("设置"),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "`书名`（目录名）/`书名`+`集数`+.m4a(文件名)",
-              style: Theme.of(context).textTheme.bodySmall,
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _isScanning ? null : _scanBooksDirectory,
+                child: _isScanning
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text("扫描听书目录"),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "`Book name` (directory name) / `Book name` + `Episode number` + .m4a (file name)",
-              style: Theme.of(context).textTheme.bodySmall,
+          const SizedBox(height: 10),
+          if (_scannedBooks.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: _selectAllBooks,
+                    icon: Icon(
+                      _selectedBooks.length == _scannedBooks.length
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                    ),
+                    label: Text(
+                      _selectedBooks.length == _scannedBooks.length
+                          ? "取消全选"
+                          : "全选",
+                    ),
+                  ),
+                  Text("${_selectedBooks.length}/${_scannedBooks.length} 本"),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "例如 | For example:",
-              style: Theme.of(context).textTheme.bodyMedium,
+            Expanded(
+              child: ListView.builder(
+                itemCount: _scannedBooks.length,
+                itemBuilder: (context, index) {
+                  final book = _scannedBooks[index];
+                  final isSelected = _selectedBooks.contains(book.name);
+                  return ListTile(
+                    leading: Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => _toggleBookSelection(book.name),
+                    ),
+                    title: Text(book.name),
+                    subtitle: Text("${book.totalTracks} 集"),
+                    trailing: _buildBookCover(book.artUrl, 40),
+                    selected: isSelected,
+                    onTap: () => _toggleBookSelection(book.name),
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "- 凡人修仙传/凡人修仙传1.m4a",
-              style: Theme.of(context).textTheme.bodySmall,
+            if (_selectedBooks.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _importSelectedBooks,
+                    child: Text("导入选中书籍 (${_selectedBooks.length})"),
+                  ),
+                ),
+              ),
+          ],
+          if (_scannedBooks.isEmpty && !_isScanning)
+            const Expanded(
+              child: Center(
+                child: Text(
+                  "点击上方按钮扫描听书目录\n将自动导入所有子文件夹中的书籍",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "- 凡人修仙传/凡人修仙传2.m4a",
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "- 凡人修仙传/凡人修仙传3.m4a",
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
         ],
       ),
     );

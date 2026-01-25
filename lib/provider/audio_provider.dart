@@ -8,6 +8,7 @@ import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/utils/utils.dart';
+import 'package:one/utils/json_storage.dart';
 
 AudioPlayer player = AudioPlayer();
 
@@ -62,29 +63,42 @@ class AudioProvider with ChangeNotifier {
 
   Future<List<AudioSource>> _getCurrentBookItems() async {
     BookModel? book = await LocalStorage.getCurrentBookVal();
-    String bookLocalPath = await LocalStorage.getLocalBookDirectory();
-    if (book != null) {
-      List<AudioSource> items = List.generate(
-        book.end - book.start + 1,
-        (i) {
-          int index = book.start + i;
-          String str = "第$index集";
-          String fileName = "${book.name}$index.m4a";
-          return AudioSource.uri(
-            Uri.file('$bookLocalPath/${book.name}/$fileName'),
-            tag: MediaItem(
-              id: '$i',
-              album: str,
-              title: "${book.name} $str",
-              artist: str,
-              artUri: Uri.file("${book.artUrl}"),
-            ),
-          );
-        },
-      );
+    if (book == null) return [];
+
+    if (book.isMetadataMode) {
+      return book.tracks!.map((track) {
+        return AudioSource.uri(
+          Uri.file(track.filePath),
+          tag: MediaItem(
+            id: track.trackNumber.toString(),
+            album: track.album.isEmpty ? book.name : track.album,
+            title: track.title,
+            artist: track.artist.isEmpty ? book.name : track.artist,
+            artUri: Uri.file(book.artUrl),
+          ),
+        );
+      }).toList();
+    } else {
+      String bookLocalPath = await LocalStorage.getLocalBookDirectory();
+      if (book.start == null || book.end == null) return [];
+
+      List<AudioSource> items = List.generate(book.end! - book.start! + 1, (i) {
+        int index = book.start! + i;
+        String str = "第$index集";
+        String fileName = "${book.name}$index.m4a";
+        return AudioSource.uri(
+          Uri.file('$bookLocalPath/${book.name}/$fileName'),
+          tag: MediaItem(
+            id: '$i',
+            album: str,
+            title: "${book.name} $str",
+            artist: str,
+            artUri: Uri.file(book.artUrl),
+          ),
+        );
+      });
       return items;
     }
-    return [];
   }
 
   Future<void> audioInit() async {
@@ -93,8 +107,10 @@ class AudioProvider with ChangeNotifier {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
     // Listen to errors during playback.
-    player.playbackEventStream
-        .listen((event) {}, onError: (Object e, StackTrace stackTrace) {});
+    player.playbackEventStream.listen(
+      (event) {},
+      onError: (Object e, StackTrace stackTrace) {},
+    );
     _isInit = true;
     notifyListeners();
     audioRun();
@@ -174,8 +190,10 @@ class AudioProvider with ChangeNotifier {
   _getRecord() async {
     BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
-      await player.seek(Duration(seconds: res.playRecordInSeconds),
-          index: res.playRecordIndex);
+      await player.seek(
+        Duration(seconds: res.playRecordInSeconds),
+        index: res.playRecordIndex,
+      );
       // 等待一小段时间确保播放器状态更新完成
       await Future.delayed(const Duration(milliseconds: 100));
       // // 调用回调通知UI播放状态已恢复
@@ -189,19 +207,15 @@ class AudioProvider with ChangeNotifier {
 
   void _setPlayRecord(int currentIndex, int inSeconds) async {
     BookModel? book = await LocalStorage.getCurrentBookVal();
-    List<BookModel> books = await LocalStorage.getBooksVal();
     if (book == null) return;
 
     book.playRecordIndex = currentIndex;
     book.playRecordInSeconds = inSeconds;
 
-    int index = books.indexWhere((e) => e.name == book.name);
-    if (index != -1) {
-      books.removeAt(index);
-    }
-    books.insert(0, book);
-    List list = books.map((e) => e.toJson()).toList();
-    LocalStorage.setBooksVal(list);
+    // Update current book in LocalStorage (for session persistence)
     LocalStorage.setCurrentBookVal(book);
+
+    // Update progress in JsonStorage (for long-term storage)
+    await JsonStorage.saveBook(book);
   }
 }
