@@ -33,8 +33,10 @@ class _AudioState extends State<Audio> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       getRecord();
     });
@@ -54,12 +56,94 @@ class _AudioState extends State<Audio> {
     super.dispose();
   }
 
-// 滚动到当前集
+  // 滚动到当前集
   void scrollToItem(int index) {
     double itemHeight = 50.0;
     double scrollPosition = index * itemHeight;
-    _scrollController.animateTo(scrollPosition,
-        duration: const Duration(milliseconds: 30), curve: Curves.easeOut);
+    _scrollController.animateTo(
+      scrollPosition,
+      duration: const Duration(milliseconds: 30),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Color _parseColor(String colorStr) {
+    if (colorStr.startsWith('color:')) {
+      List<String> parts = colorStr.substring(6).split(',');
+      if (parts.length == 3) {
+        return Color.fromRGBO(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+          1.0,
+        );
+      }
+    }
+    return Colors.grey;
+  }
+
+  Widget _buildCoverImage(dynamic artUrl) {
+    String? artUrlPath;
+
+    if (artUrl == null) {
+      artUrlPath = null;
+    } else if (artUrl is Uri) {
+      if (artUrl.scheme == 'color') {
+        artUrlPath = artUrl.toString();
+      } else {
+        artUrlPath = artUrl.path;
+      }
+    } else if (artUrl is String) {
+      artUrlPath = artUrl;
+    } else {
+      artUrlPath = artUrl.toString();
+    }
+
+    if (artUrlPath == null || artUrlPath.isEmpty) {
+      return Container(
+        width: 180,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[300],
+        ),
+        child: const Icon(Icons.book, size: 60, color: Colors.grey),
+      );
+    }
+
+    if (artUrlPath.startsWith('color:')) {
+      return Container(
+        width: 180,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: _parseColor(artUrlPath),
+        ),
+        child: const Icon(Icons.book, size: 60, color: Colors.white),
+      );
+    }
+
+    File coverFile = File(artUrlPath);
+    if (!coverFile.existsSync()) {
+      return Container(
+        width: 180,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[300],
+        ),
+        child: const Icon(Icons.book, size: 60, color: Colors.grey),
+      );
+    }
+
+    return Container(
+      width: 180,
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        image: DecorationImage(image: FileImage(coverFile), fit: BoxFit.cover),
+      ),
+    );
   }
 
   Future getRecord() async {
@@ -113,9 +197,10 @@ class _AudioState extends State<Audio> {
                     title: Text(
                       "不开启",
                       style: TextStyle(
-                          fontWeight: closeTime == e
-                              ? FontWeight.bold
-                              : FontWeight.normal),
+                        fontWeight: closeTime == e
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                     selected: closeTime == e,
                     onTap: () {
@@ -133,9 +218,10 @@ class _AudioState extends State<Audio> {
                   title: Text(
                     "$e分钟",
                     style: TextStyle(
-                        fontWeight: closeTime == e
-                            ? FontWeight.bold
-                            : FontWeight.normal),
+                      fontWeight: closeTime == e
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                   selected: closeTime == e,
                   trailing: trailing,
@@ -154,11 +240,12 @@ class _AudioState extends State<Audio> {
 
   Stream<PositionData> get _positionDataStream =>
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
-          player.positionStream,
-          player.bufferedPositionStream,
-          player.durationStream,
-          (position, bufferedPosition, duration) => PositionData(
-              position, bufferedPosition, duration ?? Duration.zero));
+        player.positionStream,
+        player.bufferedPositionStream,
+        player.durationStream,
+        (position, bufferedPosition, duration) =>
+            PositionData(position, bufferedPosition, duration ?? Duration.zero),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -174,24 +261,33 @@ class _AudioState extends State<Audio> {
         title: const Text("听书"),
         actions: [
           IconButton(
-              color: closeTime == 0
-                  ? null
-                  : Theme.of(context).colorScheme.secondary,
-              onPressed: () => setCloseTime(context),
-              icon: const Icon(Icons.alarm)),
+            color: closeTime == 0
+                ? null
+                : Theme.of(context).colorScheme.secondary,
+            onPressed: () => setCloseTime(context),
+            icon: const Icon(Icons.alarm),
+          ),
           IconButton(
-              onPressed: () async {
-                await Navigator.of(context).push(MaterialPageRoute(
-                    builder: (BuildContext context) => const SettingBook()));
-              },
-              icon: const Icon(Icons.settings_applications_sharp)),
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (BuildContext context) => const SettingBook(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings_applications_sharp),
+          ),
           IconButton(
-              onPressed: () async {
-                await Navigator.of(context).push(MaterialPageRoute(
-                    builder: (BuildContext context) => const Books()));
-                getRecord();
-              },
-              icon: const Icon(Icons.book))
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (BuildContext context) => const Books(),
+                ),
+              );
+              getRecord();
+            },
+            icon: const Icon(Icons.book),
+          ),
         ],
       ),
       body: SafeArea(
@@ -215,23 +311,17 @@ class _AudioState extends State<Audio> {
                         child: Padding(
                           padding: const EdgeInsets.all(18.0),
                           child: Center(
-                            child: Container(
-                              width: 180,
-                              height: 180,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(
-                                  image: FileImage(File(metadata.artUri!.path)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            child: _buildCoverImage(
+                              metadata.extras?['artUrl'] ?? metadata.artUri,
                             ),
                           ),
                         ),
                       ),
-                      Text(isInit && isGetRecord ? metadata.album! : "",
-                          style: Theme.of(context).textTheme.titleLarge),
-                      Text(isInit && isGetRecord ? metadata.title : ""),
+                      Text(isInit && isGetRecord ? metadata.title : "",
+                        style: Theme.of(context).textTheme.titleLarge,),
+                      Text(
+                        isInit && isGetRecord ? metadata.album! : "",
+                      ),
                     ],
                   );
                 },
@@ -317,8 +407,10 @@ class ControlButtons extends StatelessWidget {
               icon: const Icon(Icons.replay_10_rounded),
               iconSize: 44.0,
               onPressed: player.duration != null
-                  ? () => player.seek((positionData ?? Duration.zero) -
-                      const Duration(seconds: 10))
+                  ? () => player.seek(
+                      (positionData ?? Duration.zero) -
+                          const Duration(seconds: 10),
+                    )
                   : null,
             );
           },
@@ -361,8 +453,10 @@ class ControlButtons extends StatelessWidget {
               return IconButton(
                 icon: const Icon(Icons.replay),
                 iconSize: 64.0,
-                onPressed: () => player.seek(Duration.zero,
-                    index: player.effectiveIndices.first),
+                onPressed: () => player.seek(
+                  Duration.zero,
+                  index: player.effectiveIndices.first,
+                ),
               );
             }
           },
@@ -383,8 +477,10 @@ class ControlButtons extends StatelessWidget {
               icon: const Icon(Icons.forward_10_rounded),
               iconSize: 44.0,
               onPressed: player.duration != null
-                  ? () => player.seek((positionData ?? Duration.zero) +
-                      const Duration(seconds: 10))
+                  ? () => player.seek(
+                      (positionData ?? Duration.zero) +
+                          const Duration(seconds: 10),
+                    )
                   : null,
             );
           },

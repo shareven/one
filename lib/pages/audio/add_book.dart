@@ -184,7 +184,7 @@ class _AddBookState extends State<AddBook> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("添加书")),
-      body: Column(
+      body: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(15),
@@ -226,6 +226,35 @@ class _AddBookState extends State<AddBook> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(15),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                "目录规范:\n"
+                "1. 在听书目录下创建文件夹作为书名\n"
+                "2. 将音频文件放入书名文件夹中\n"
+                "3. 支持格式: mp3, m4a, mp4, aac, flac, ogg, wav, wma\n"
+                "4. 可在书名文件夹中放置任意jpg/png图片作为封面\n\n"
+                "示例:\n"
+                "book/\n"
+                "├── 从箭术开始修行/\n"
+                "│   ├── 从箭术开始修行1.m4a\n"
+                "│   ├── 从箭术开始修行2.m4a\n"
+                "│   └── cover.jpg  (可选封面)\n"
+                "├── 另一本书/\n"
+                "│   ├── 01.mp3\n"
+                "│   └── 02.mp3\n"
+                "└── 第三本书/\n"
+                "    └── audio.m4a",
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+            ),
+          ),
           const SizedBox(height: 10),
           if (_scannedBooks.isNotEmpty) ...[
             Padding(
@@ -250,25 +279,21 @@ class _AddBookState extends State<AddBook> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _scannedBooks.length,
-                itemBuilder: (context, index) {
-                  final book = _scannedBooks[index];
-                  final isSelected = _selectedBooks.contains(book.name);
-                  return ListTile(
-                    leading: Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => _toggleBookSelection(book.name),
-                    ),
-                    title: Text(book.name),
-                    subtitle: Text("${book.totalTracks} 集"),
-                    trailing: _buildBookCover(book.artUrl, 40),
-                    selected: isSelected,
-                    onTap: () => _toggleBookSelection(book.name),
-                  );
-                },
-              ),
+            Column(
+              children: _scannedBooks.map((book) {
+                final isSelected = _selectedBooks.contains(book.name);
+                return ListTile(
+                  leading: Checkbox(
+                    value: isSelected,
+                    onChanged: (_) => _toggleBookSelection(book.name),
+                  ),
+                  title: Text(book.name),
+                  subtitle: Text("${book.totalTracks} 集"),
+                  trailing: _buildBookCover(book.artUrl, 40),
+                  selected: isSelected,
+                  onTap: () => _toggleBookSelection(book.name),
+                );
+              }).toList(),
             ),
             if (_selectedBooks.isNotEmpty)
               Padding(

@@ -74,7 +74,10 @@ class AudioProvider with ChangeNotifier {
             album: track.album.isEmpty ? book.name : track.album,
             title: track.title,
             artist: track.artist.isEmpty ? book.name : track.artist,
-            artUri: Uri.file(book.artUrl),
+            artUri: book.artUrl.startsWith('color:')
+                ? null
+                : Uri.file(book.artUrl),
+            extras: {'artUrl': book.artUrl},
           ),
         );
       }).toList();
@@ -93,7 +96,10 @@ class AudioProvider with ChangeNotifier {
             album: str,
             title: "${book.name} $str",
             artist: str,
-            artUri: Uri.file(book.artUrl),
+            artUri: book.artUrl.startsWith('color:')
+                ? null
+                : Uri.file(book.artUrl),
+            extras: {'artUrl': book.artUrl},
           ),
         );
       });

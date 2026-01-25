@@ -10,22 +10,30 @@ ios用户，需要你clone源码后，自行调试和打包了。
 
 # 听书
 
-### 命名规则 
+### 目录规范
 
-`书名`（目录名）/`书名`+`集数`+.m4a(文件名)
+在听书目录下创建文件夹作为书名，将音频文件放入书名文件夹中。
 
+```
+设备存储/Music/book/
+├── 从箭术开始修行/
+│   ├── 从箭术开始修行1.m4a
+│   ├── 从箭术开始修行2.m4a
+│   └── cover.jpg  (可选封面)
+├── 凡人修仙传/
+│   ├── 凡人修仙传1.m4a
+│   └── 凡人修仙传2.m4a
+└── 第三本书/
+    └── audio.m4a
+```
 
-例如 | For example:
+支持格式: mp3, m4a, mp4, aac, flac, ogg, wav, wma
 
-- 凡人修仙传/凡人修仙传1.m4a
-
-- 凡人修仙传/凡人修仙传2.m4a
-
-- 凡人修仙传/凡人修仙传3.m4a
-
-如果你是从ximalaya下载音频文件，可以先用xiamalaya官方pc客户端下载，然后用[Ximalaya-XM-Decrypt](https://github.com/Diaoxiaozhang/Ximalaya-XM-Decrypt)解密成m4a文件，再用项目里的renama-audiofiles.sh(需修改directory)重命名m4a文件为以上格式。
+**封面设置**: 在书名文件夹中放置任意 jpg/png 图片作为听书封面，不设置则使用随机颜色封面。
 
 默认手机存放音频目录是`设备存储/Music/book/`,可以修改。
+
+如果你是从ximalaya下载音频文件，可以先用xiamalaya官方pc客户端下载，然后用[Ximalaya-XM-Decrypt](https://github.com/Diaoxiaozhang/Ximalaya-XM-Decrypt)解密成m4a文件，再用项目里的renama-audiofiles.sh(需修改directory)重命名m4a文件。
 
 
 # 备份与还原数据库
