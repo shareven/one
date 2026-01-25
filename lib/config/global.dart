@@ -20,7 +20,7 @@ class Global {
   static const String noDataFoundImg = "assets/images/nodatafound.png";
   static const String bookLocalPath = "/storage/emulated/0/Music/book";
   // 定时关闭听书，时间：分钟
-  static const List<int> closeTimeList = [0, 10, 20, 30, 40, 60, 90];
+  static const List<int> closeTimeList = [0, 5, 10, 15, 20, 30, 40, 60];
   // 每3s自动保存播放进度 | Automatically save playback progress every 3 seconds
   static const int autoSaveSeconds = 3;
   static List<BookModel> books = [
