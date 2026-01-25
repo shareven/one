@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:one/model/book_model.dart';
 import 'package:one/provider/audio_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:one/config/global.dart';
-import 'package:one/pages/audio/Books.dart';
+import 'package:one/model/book_model.dart';
+import 'package:one/pages/audio/books.dart';
 import 'package:one/pages/audio/setting_book.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/widgets/countdown_timer.dart';
@@ -45,18 +45,15 @@ class _AudioState extends State<Audio> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 保存AudioProvider引用以便在dispose中安全使用
     _audioProvider = context.read<AudioProvider>();
   }
 
   @override
   void dispose() {
-    // 清理回调避免内存泄漏
     _audioProvider?.setOnPlayStateRestored(null);
     super.dispose();
   }
 
-  // 滚动到当前集
   void scrollToItem(int index) {
     double itemHeight = 50.0;
     double scrollPosition = index * itemHeight;
@@ -104,10 +101,14 @@ class _AudioState extends State<Audio> {
         width: 180,
         height: 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[300],
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.book, size: 60, color: Colors.grey),
+        child: Icon(
+          Icons.book,
+          size: 60,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       );
     }
 
@@ -116,8 +117,8 @@ class _AudioState extends State<Audio> {
         width: 180,
         height: 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
           color: _parseColor(artUrlPath),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.book, size: 60, color: Colors.white),
       );
@@ -129,10 +130,14 @@ class _AudioState extends State<Audio> {
         width: 180,
         height: 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[300],
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.book, size: 60, color: Colors.grey),
+        child: Icon(
+          Icons.book,
+          size: 60,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       );
     }
 
@@ -140,7 +145,7 @@ class _AudioState extends State<Audio> {
       width: 180,
       height: 180,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         image: DecorationImage(image: FileImage(coverFile), fit: BoxFit.cover),
       ),
     );
@@ -150,19 +155,15 @@ class _AudioState extends State<Audio> {
     BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
       try {
-        // 检查播放器是否已经有当前播放的内容
         if (player.currentIndex != null && player.sequence.isNotEmpty) {
-          // 播放器已经初始化，直接滚动到当前位置
           Future.delayed(Duration.zero, () {
             if (mounted) {
               scrollToItem(player.currentIndex!);
             }
           });
         } else {
-          // 播放器还未初始化，设置回调等待初始化完成
           context.read<AudioProvider>().setOnPlayStateRestored(() {
             if (mounted) {
-              // 使用Future.delayed确保在下一帧执行，避免在build过程中调用setState
               Future.delayed(Duration.zero, () {
                 if (mounted) {
                   scrollToItem(res.playRecordIndex);
@@ -183,6 +184,7 @@ class _AudioState extends State<Audio> {
   Future<void> setCloseTime(BuildContext context) {
     int closeTime = context.read<AudioProvider>().closeTime;
     DateTime? closeDateTime = context.read<AudioProvider>().closeDateTime;
+
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -190,7 +192,8 @@ class _AudioState extends State<Audio> {
           title: const Text("定时关闭"),
           content: SizedBox(
             height: 400,
-            child: Column(
+            child: ListView(
+              shrinkWrap: true,
               children: Global.closeTimeList.map((e) {
                 if (e == 0) {
                   return ListTile(
@@ -249,51 +252,44 @@ class _AudioState extends State<Audio> {
 
   @override
   Widget build(BuildContext context) {
-    // 初始化audio
     context.read<AudioProvider>().audioInit();
     bool isGetRecord = context.watch<AudioProvider>().isGetRecord;
     int closeTime = context.select((AudioProvider a) => a.closeTime);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       drawer: const MainDrawer(),
       appBar: AppBar(
         title: const Text("听书"),
         actions: [
           IconButton(
-            color: closeTime == 0
-                ? null
-                : Theme.of(context).colorScheme.secondary,
-            onPressed: () => setCloseTime(context),
             icon: const Icon(Icons.alarm),
+            color: closeTime == 0 ? null : colorScheme.secondary,
+            onPressed: () => setCloseTime(context),
           ),
           IconButton(
+            icon: const Icon(Icons.settings),
             onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (BuildContext context) => const SettingBook(),
-                ),
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingBook()),
               );
             },
-            icon: const Icon(Icons.settings_applications_sharp),
           ),
           IconButton(
+            icon: const Icon(Icons.book),
             onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (BuildContext context) => const Books(),
-                ),
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Books()),
               );
               getRecord();
             },
-            icon: const Icon(Icons.book),
           ),
         ],
       ),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
               child: StreamBuilder<SequenceState?>(
@@ -301,26 +297,58 @@ class _AudioState extends State<Audio> {
                 builder: (context, snapshot) {
                   final state = snapshot.data;
                   if (state?.sequence.isEmpty ?? true) {
-                    return const SizedBox();
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.headphones,
+                            size: 64,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "没有播放内容",
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   final metadata = state!.currentSource!.tag as MediaItem;
                   return Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(18.0),
-                          child: Center(
-                            child: _buildCoverImage(
-                              metadata.extras?['artUrl'] ?? metadata.artUri,
-                            ),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: _buildCoverImage(
+                          metadata.extras?['artUrl'] ?? metadata.artUri,
                         ),
                       ),
-                      Text(isInit && isGetRecord ? metadata.title : "",
-                        style: Theme.of(context).textTheme.titleLarge,),
-                      Text(
-                        isInit && isGetRecord ? metadata.album! : "",
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: Text(
+                          isInit && isGetRecord ? metadata.title : "",
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: Text(
+                          isInit && isGetRecord ? metadata.album ?? "" : "",
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   );
@@ -329,11 +357,9 @@ class _AudioState extends State<Audio> {
             ),
             isInit && isGetRecord
                 ? ControlButtons(player)
-                : Container(
-                    margin: const EdgeInsets.all(8.0),
-                    width: 64.0,
-                    height: 64.0,
-                    child: const CircularProgressIndicator(),
+                : const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
                   ),
             StreamBuilder<PositionData>(
               stream: _positionDataStream,
@@ -350,36 +376,53 @@ class _AudioState extends State<Audio> {
                 );
               },
             ),
-            const SizedBox(height: 8.0),
-            SizedBox(
-              height: 300.0,
-              child: StreamBuilder<SequenceState?>(
-                stream: player.sequenceStateStream,
-                builder: (context, snapshot) {
-                  final state = snapshot.data;
-                  final sequence = state?.sequence ?? [];
-                  return ListView(
-                    controller: _scrollController,
-                    children: [
-                      for (var i = 0; i < sequence.length; i++)
-                        SizedBox(
-                          height: 50,
-                          child: Material(
-                            color: i == state!.currentIndex
-                                ? Theme.of(context).secondaryHeaderColor
-                                : Theme.of(context).highlightColor,
-                            child: ListTile(
-                              title: Text(sequence[i].tag.title as String),
-                              onTap: () async {
-                                await player.seek(Duration.zero, index: i);
-                                player.play();
-                              },
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                child: StreamBuilder<SequenceState?>(
+                  stream: player.sequenceStateStream,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data;
+                    final sequence = state?.sequence ?? [];
+                    return ListView.builder(
+                      controller: _scrollController,
+                      itemCount: sequence.length,
+                      itemBuilder: (context, index) {
+                        final isCurrent = index == state?.currentIndex;
+                        return Container(
+                          color: isCurrent
+                              ? colorScheme.primary.withValues(alpha: 0.1)
+                              : Colors.transparent,
+                          child: ListTile(
+                            title: Text(
+                              sequence[index].tag.title as String,
+                              style: TextStyle(
+                                color: isCurrent
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurface,
+                                fontWeight: isCurrent
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
                             ),
+                            onTap: () async {
+                              await player.seek(Duration.zero, index: index);
+                              player.play();
+                            },
                           ),
-                        ),
-                    ],
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -396,6 +439,8 @@ class ControlButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -431,33 +476,17 @@ class ControlButtons extends StatelessWidget {
             final playing = playerState?.playing;
             if (processingState == ProcessingState.loading ||
                 processingState == ProcessingState.buffering) {
-              return Container(
-                margin: const EdgeInsets.all(8.0),
-                width: 64.0,
-                height: 64.0,
-                child: const CircularProgressIndicator(),
+              return const SizedBox(
+                width: 64,
+                height: 64,
+                child: CircularProgressIndicator(),
               );
             } else if (playing != true) {
-              return IconButton(
-                icon: const Icon(Icons.play_arrow),
-                iconSize: 64.0,
-                onPressed: player.play,
-              );
+              return _buildPlayButton(colorScheme);
             } else if (processingState != ProcessingState.completed) {
-              return IconButton(
-                icon: const Icon(Icons.pause),
-                iconSize: 64.0,
-                onPressed: player.pause,
-              );
+              return _buildPauseButton(colorScheme);
             } else {
-              return IconButton(
-                icon: const Icon(Icons.replay),
-                iconSize: 64.0,
-                onPressed: () => player.seek(
-                  Duration.zero,
-                  index: player.effectiveIndices.first,
-                ),
-              );
+              return _buildReplayButton(colorScheme);
             }
           },
         ),
@@ -486,6 +515,55 @@ class ControlButtons extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildPlayButton(ColorScheme colorScheme) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.play_arrow, size: 48),
+        onPressed: player.play,
+        color: colorScheme.onPrimary,
+      ),
+    );
+  }
+
+  Widget _buildPauseButton(ColorScheme colorScheme) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.pause, size: 48),
+        onPressed: player.pause,
+        color: colorScheme.onPrimary,
+      ),
+    );
+  }
+
+  Widget _buildReplayButton(ColorScheme colorScheme) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.replay, size: 48),
+        onPressed: () =>
+            player.seek(Duration.zero, index: player.effectiveIndices.first),
+        color: colorScheme.onPrimary,
+      ),
     );
   }
 }
