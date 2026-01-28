@@ -6,7 +6,7 @@ VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d ' ')
 VERSION_SHORT=$(echo $VERSION | cut -d'+' -f1)
 
 # 更新 README.md 中的版本号
-sed -i '' "s/最新版本：v[0-9]\+\.[0-9]\+\.[0-9]\+/最新版本：v${VERSION_SHORT}/g" README.md
+sed -i '' "s/最新版本：v[0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}/最新版本：v${VERSION_SHORT}/g" README.md
 
 # 构建 APK
 flutter build apk
