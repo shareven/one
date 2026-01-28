@@ -29,7 +29,8 @@ class _AudioState extends State<Audio> {
   final ScrollController _scrollController = ScrollController();
   bool isInit = false;
   AudioProvider? _audioProvider;
-
+  double itemHeight = 50.0;
+  
   @override
   void initState() {
     super.initState();
@@ -55,7 +56,7 @@ class _AudioState extends State<Audio> {
   }
 
   void scrollToItem(int index) {
-    double itemHeight = 50.0;
+    
     double scrollPosition = index * itemHeight;
     _scrollController.animateTo(
       scrollPosition,
@@ -401,6 +402,7 @@ class _AudioState extends State<Audio> {
                       itemBuilder: (context, index) {
                         final isCurrent = index == state?.currentIndex;
                         return Container(
+                          height: itemHeight,
                           color: isCurrent
                               ? colorScheme.primary.withValues(alpha: 0.1)
                               : Colors.transparent,
@@ -415,6 +417,8 @@ class _AudioState extends State<Audio> {
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             onTap: () async {
                               await player.seek(Duration.zero, index: index);
