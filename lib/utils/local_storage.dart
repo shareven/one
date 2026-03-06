@@ -17,6 +17,8 @@ class LocalStorage {
   static const String headTextKey = "headTextKey";
   static const String themeColorKey = "themeColorKey";
   static const String casfafKey = "casfafKey";
+  static const String playProgressKey = "playProgress";
+
 
   static Future<void> setBool(key, value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -183,6 +185,43 @@ class LocalStorage {
     return prefs.getInt(themeColorKey) ?? Global.themeColor.value;
   }
 
+  static Future<void> setPlayProgress(
+    String bookName,
+    int playRecordIndex,
+    int playRecordInSeconds,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? val = prefs.getString(playProgressKey);
+    Map<String, dynamic> progressMap = {};
+    if (val != null) {
+      try {
+        progressMap = jsonDecode(val) as Map<String, dynamic>;
+      } catch (e) {
+        print(e);
+      }
+    }
+    progressMap[bookName] = {
+      "playRecordIndex": playRecordIndex,
+      "playRecordInSeconds": playRecordInSeconds,
+    };
+    await prefs.setString(playProgressKey, jsonEncode(progressMap));
+  }
+
+  static Future<Map<String, dynamic>?> getPlayProgress(String bookName) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? val = prefs.getString(playProgressKey);
+    if (val != null) {
+      try {
+        Map<String, dynamic> progressMap =
+            jsonDecode(val) as Map<String, dynamic>;
+        return progressMap[bookName] as Map<String, dynamic>?;
+      } catch (e) {
+        print(e);
+      }
+    }
+    return null;
+  }
+  
   static Future<String> getAllStorage() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // 创建可序列化的Map

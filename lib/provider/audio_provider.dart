@@ -196,9 +196,16 @@ class AudioProvider with ChangeNotifier {
   _getRecord() async {
     BookModel? res = await LocalStorage.getCurrentBookVal();
     if (res != null) {
+      // Get progress from LocalStorage instead of from book object
+      Map<String, dynamic>? progress = await LocalStorage.getPlayProgress(
+        res.name,
+      );
+      int playRecordIndex = progress?['playRecordIndex'] ?? 1;
+      int playRecordInSeconds = progress?['playRecordInSeconds'] ?? 0;
+
       await player.seek(
-        Duration(seconds: res.playRecordInSeconds),
-        index: res.playRecordIndex,
+        Duration(seconds: playRecordInSeconds),
+        index: playRecordIndex,
       );
       // 等待一小段时间确保播放器状态更新完成
       await Future.delayed(const Duration(milliseconds: 100));
@@ -221,7 +228,8 @@ class AudioProvider with ChangeNotifier {
     // Update current book in LocalStorage (for session persistence)
     LocalStorage.setCurrentBookVal(book);
 
-    // Update progress in JsonStorage (for long-term storage)
-    await JsonStorage.saveBook(book);
+    // Save progress to LocalStorage (for long-term storage)
+    // This avoids rewriting the entire books.json every 3 seconds
+    await LocalStorage.setPlayProgress(book.name, currentIndex, inSeconds);
   }
 }
