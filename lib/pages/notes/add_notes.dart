@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:one/utils/data_service.dart';
 import 'package:one/utils/Loading.dart';
 import 'package:one/utils/result_data.dart';
+import 'package:one/utils/utils.dart';
 
 class AddNotes extends StatefulWidget {
   const AddNotes({super.key});
@@ -34,6 +36,13 @@ class _AddNotesState extends State<AddNotes> {
       appBar: AppBar(
         title: const Text("添加便签"),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _content ?? ""));
+              showSuccessMsg("已复制");
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.done),
             onPressed:

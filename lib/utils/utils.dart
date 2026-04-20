@@ -33,7 +33,7 @@ void showSuccessMsg(String msg) {
       Icons.check,
       color: Colors.white,
     ),
-    position: NotificationPosition.bottom,
+    position: NotificationPosition.top,
     background: Colors.green,
   );
 }
