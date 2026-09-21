@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:one/model/book_model.dart';
+import 'package:one/utils/episode_number.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/utils/utils.dart';
 import 'package:path/path.dart' as path_lib;
@@ -107,7 +108,10 @@ class AudioScanner {
                   ? coverPath
                   : _generateRandomColorCover(bookName);
 
-              List<AudioTrack> tracks = _extractMetadataListSync(audioFiles);
+              List<AudioTrack> tracks = _extractMetadataListSync(
+                audioFiles,
+                bookName,
+              );
               books.add(
                 BookModel(name: bookName, artUrl: artUrl, tracks: tracks),
               );
@@ -191,7 +195,10 @@ class AudioScanner {
     return 'color:$r,$g,$b';
   }
 
-  static List<AudioTrack> _extractMetadataListSync(List<File> files) {
+  static List<AudioTrack> _extractMetadataListSync(
+    List<File> files,
+    String bookName,
+  ) {
     List<AudioTrack> tracks = [];
     for (File file in files) {
       try {
@@ -220,37 +227,37 @@ class AudioScanner {
         );
       }
     }
-    return _sortTracks(tracks);
+    return _sortTracks(tracks, bookName);
   }
 
-  static List<AudioTrack> _sortTracks(List<AudioTrack> tracks) {
+  static List<AudioTrack> _sortTracks(List<AudioTrack> tracks, String bookName) {
     List<AudioTrack> sorted = List.from(tracks);
 
     sorted.sort((a, b) {
-      if (a.trackNumber > 0 && b.trackNumber > 0) {
-        return a.trackNumber.compareTo(b.trackNumber);
+      final keyA = _trackKey(a, bookName);
+      final keyB = _trackKey(b, bookName);
+
+      if (keyA.isEmpty && keyB.isEmpty) {
+        return a.title.toLowerCase().compareTo(b.title.toLowerCase());
       }
+      if (keyA.isEmpty) return -1;
+      if (keyB.isEmpty) return 1;
 
-      String aTitle = a.title.toLowerCase();
-      String bTitle = b.title.toLowerCase();
+      final cmp = EpisodeNumber.compareKeys(keyA, keyB);
+      if (cmp != 0) return cmp;
 
-      int numComparison = _extractFirstNumber(
-        aTitle,
-      ).compareTo(_extractFirstNumber(bTitle));
-      if (numComparison != 0) return numComparison;
-
-      return aTitle.compareTo(bTitle);
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
 
     return sorted;
   }
 
-  static int _extractFirstNumber(String str) {
-    RegExp exp = RegExp(r'\d+');
-    Match? match = exp.firstMatch(str);
-    if (match != null) {
-      return int.tryParse(match.group(0) ?? '0') ?? 0;
-    }
-    return 0;
+  static List<int> _trackKey(AudioTrack track, String bookName) {
+    return EpisodeNumber.trackKeyOf(
+      track.trackNumber,
+      track.title,
+      path_lib.basename(track.filePath),
+      bookName: bookName,
+    );
   }
 }

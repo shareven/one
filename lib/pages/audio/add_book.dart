@@ -282,7 +282,7 @@ class _AddBookState extends State<AddBook> {
                     value: isSelected,
                     onChanged: (_) => _toggleBookSelection(book.name),
                     title: Text(book.name, maxLines: 2),
-                    subtitle: Text("${book.totalTracks} 集"),
+                    subtitle: Text(book.episodeRangeLabel),
                     secondary: _buildBookCover(book.artUrl, 48),
                   );
                 },

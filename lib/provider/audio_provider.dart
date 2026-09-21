@@ -8,7 +8,6 @@ import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
 import 'package:one/utils/local_storage.dart';
 import 'package:one/utils/utils.dart';
-import 'package:one/utils/json_storage.dart';
 
 AudioPlayer player = AudioPlayer();
 
@@ -182,40 +181,42 @@ class AudioProvider with ChangeNotifier {
   _setSource() async {
     if (_isSettingSource) return;
     _isSettingSource = true;
-    List<AudioSource> list = await _getCurrentBookItems();
+    isGetRecord = false;
+    notifyListeners();
     try {
-      if (player.playing) await player.pause();
-      await player.setAudioSources(list);
+      List<AudioSource> list = await _getCurrentBookItems();
+      if (list.isNotEmpty) {
+        BookModel? res = await LocalStorage.getCurrentBookVal();
+        int playRecordIndex = 0;
+        int playRecordInSeconds = 0;
+        if (res != null) {
+          Map<String, dynamic>? progress = await LocalStorage.getPlayProgress(
+            res.name,
+          );
+          playRecordIndex = progress?['playRecordIndex'] ?? 0;
+          playRecordInSeconds = progress?['playRecordInSeconds'] ?? 0;
+        }
+        if (playRecordIndex < 0 || playRecordIndex >= list.length) {
+          playRecordIndex = 0;
+          playRecordInSeconds = 0;
+        }
+        if (player.playing) await player.pause();
+        await player.setAudioSources(
+          list,
+          initialIndex: playRecordIndex,
+          initialPosition: Duration(seconds: playRecordInSeconds),
+        );
+        if (_onPlayStateRestored != null) {
+          _onPlayStateRestored!();
+        }
+      }
     } catch (e) {
       showErrorMsg(e.toString());
+    } finally {
+      _isSettingSource = false;
+      isGetRecord = true;
+      notifyListeners();
     }
-    _getRecord();
-    notifyListeners();
-  }
-
-  _getRecord() async {
-    BookModel? res = await LocalStorage.getCurrentBookVal();
-    if (res != null) {
-      // Get progress from LocalStorage instead of from book object
-      Map<String, dynamic>? progress = await LocalStorage.getPlayProgress(
-        res.name,
-      );
-      int playRecordIndex = progress?['playRecordIndex'] ?? 1;
-      int playRecordInSeconds = progress?['playRecordInSeconds'] ?? 0;
-
-      await player.seek(
-        Duration(seconds: playRecordInSeconds),
-        index: playRecordIndex,
-      );
-      // 等待一小段时间确保播放器状态更新完成
-      await Future.delayed(const Duration(milliseconds: 100));
-      // // 调用回调通知UI播放状态已恢复
-      if (_onPlayStateRestored != null) {
-        _onPlayStateRestored!();
-      }
-    }
-    isGetRecord = true;
-    notifyListeners();
   }
 
   void _setPlayRecord(int currentIndex, int inSeconds) async {

@@ -233,9 +233,7 @@ class _BooksState extends State<Books> {
                           ),
                         ),
                         subtitle: Text(
-                          book.isMetadataMode
-                              ? "${book.totalTracks}集"
-                              : "${book.start}-${book.end}集",
+                          book.episodeRangeLabel,
                           style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                         trailing: isCurrent

@@ -1,3 +1,5 @@
+import 'package:one/utils/episode_number.dart';
+
 class AudioTrack {
   final int? id;
   final int? bookId;
@@ -98,6 +100,32 @@ class BookModel {
       return tracks!.length;
     }
     return (end != null && start != null) ? (end! - start! + 1) : 0;
+  }
+
+  String get episodeRangeLabel {
+    if (isMetadataMode) {
+      final valid = tracks!
+          .map(
+            (t) => EpisodeNumber.trackKeyOf(
+              t.trackNumber,
+              t.title,
+              t.filePath.split('/').last,
+              bookName: name,
+            ),
+          )
+          .where((k) => k.isNotEmpty)
+          .map((k) => k.last)
+          .toList();
+      if (valid.isNotEmpty) {
+        valid.sort();
+        return "${valid.first}-${valid.last}集";
+      }
+      return "共$totalTracks集";
+    }
+    if (start != null && end != null) {
+      return "$start-$end集";
+    }
+    return "共$totalTracks集";
   }
 
   BookModel.fromJson(Map<String, dynamic> json)
