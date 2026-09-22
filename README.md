@@ -4,7 +4,7 @@
 
 # 下载 | Download
 
-最新版本：v1.0.13
+最新版本：v1.0.14
 
 [Android apk release](https://github.com/shareven/one/releases/)
 

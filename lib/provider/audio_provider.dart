@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:one/config/global.dart';
 import 'package:one/model/book_model.dart';
 import 'package:one/utils/local_storage.dart';
+import 'package:one/utils/playback_logic.dart';
 import 'package:one/utils/utils.dart';
 
 AudioPlayer player = AudioPlayer();
@@ -128,6 +129,7 @@ class AudioProvider with ChangeNotifier {
     if (subscriptionPlayStream != null) {
       await subscriptionPlayStream!.cancel();
     }
+    final endingGuard = EndingSkipGuard();
     subscriptionPlayStream = player.positionStream.listen((position) {
       //  记录播放位置 3s保存一次 | Record playback position and save once every 3 seconds
       if (player.playing &&
@@ -139,15 +141,17 @@ class AudioProvider with ChangeNotifier {
 
       if (position.inMilliseconds < bookSkipSeconds[0].inMilliseconds &&
           player.playing) {
-        // 刚开始播放时设置跳过片头 | Set to skip the opening when starting playback
+        //  刚开始播放时设置跳过片头 | Set to skip the opening when starting playback
         player.seek(bookSkipSeconds[0]);
       }
 
-      // 播到快结束时设置跳过片尾 | Set to skip the ending when the video is almost finished
-      if (player.duration != null &&
-          position.inMilliseconds >
-              player.duration!.inMilliseconds -
-                  bookSkipSeconds[1].inMilliseconds) {
+      //  播到快结束时设置跳过片尾 | Set to skip the ending when the video is almost over
+      if (endingGuard.shouldSkip(
+        playing: player.playing,
+        duration: player.duration,
+        skipEnd: bookSkipSeconds[1],
+        position: position,
+      )) {
         player.seekToNext();
       }
     });
