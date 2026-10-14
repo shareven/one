@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:one/provider/audio_provider.dart';
+import 'package:one/widgets/marquee_text.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:one/config/global.dart';
@@ -30,7 +31,7 @@ class _AudioState extends State<Audio> {
   bool isInit = false;
   AudioProvider? _audioProvider;
   double itemHeight = 50.0;
-  
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +57,6 @@ class _AudioState extends State<Audio> {
   }
 
   void scrollToItem(int index) {
-    
     double scrollPosition = index * itemHeight;
     _scrollController.animateTo(
       scrollPosition,
@@ -332,25 +332,24 @@ class _AudioState extends State<Audio> {
                       ),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 320),
-                        child: Text(
+                        child: MarqueeText(
                           isInit && isGetRecord ? metadata.title : "",
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(height: 8),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 320),
-                        child: Text(
+                        child: MarqueeText(
                           isInit && isGetRecord ? metadata.album ?? "" : "",
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontSize: 12,color: colorScheme.onSurfaceVariant),
+                              ?.copyWith(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                           textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -407,19 +406,22 @@ class _AudioState extends State<Audio> {
                               ? colorScheme.primary.withValues(alpha: 0.1)
                               : Colors.transparent,
                           child: ListTile(
-                            title: Text(
-                              sequence[index].tag.title as String,
-                              style: TextStyle(
-                                color: isCurrent
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurface,
-                                fontWeight: isCurrent
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            title: isCurrent
+                                ? MarqueeText(
+                                    sequence[index].tag.title as String,
+                                    style: TextStyle(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : Text(
+                                    sequence[index].tag.title as String,
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                             onTap: () async {
                               await player.seek(Duration.zero, index: index);
                               player.play();
